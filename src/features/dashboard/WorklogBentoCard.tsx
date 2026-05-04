@@ -1,3 +1,4 @@
+import { Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { WorklogSummary } from '../../types';
 import { formatDuration } from '../../lib/duration';
@@ -22,21 +23,26 @@ export function WorklogBentoCard({ data, onClick, layoutId }: WorklogBentoCardPr
       style={{ borderRadius: 16 }}
       transition={{ layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } }}
     >
-      <span className="text-[11px] font-medium text-[var(--text-secondary)] relative z-10">
-        ⏱ Worklog
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-text-secondary relative z-10">
+        <Clock size={13} aria-hidden strokeWidth={2} />
+        Worklog
       </span>
       <div className="relative z-10">
-        <div className="flex gap-3 items-baseline">
-          <span className="text-2xl font-bold tracking-tight text-cyan-400 counter-animate">
-            {formatDuration(userSecs)}
-          </span>
-          <span className="text-[11px] text-[var(--text-secondary)]">User</span>
-          <span className="text-2xl font-bold tracking-tight text-purple-400 counter-animate">
-            {formatDuration(claudeSecs)}
-          </span>
-          <span className="text-[11px] text-[var(--text-secondary)]">Claude</span>
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-wide text-text-secondary">User</div>
+            <div className="text-2xl font-bold tracking-tight text-accent-cyan whitespace-nowrap counter-animate">
+              {formatDuration(userSecs)}
+            </div>
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-wide text-text-secondary">Claude</div>
+            <div className="text-2xl font-bold tracking-tight text-accent-purple whitespace-nowrap counter-animate">
+              {formatDuration(claudeSecs)}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-3 mt-1 text-[10px] text-slate-500">
+        <div className="mt-1 text-[10px] text-text-secondary">
           <span>Total: {formatDuration(total)} · {sessions} session{sessions !== 1 ? 's' : ''}</span>
         </div>
       </div>

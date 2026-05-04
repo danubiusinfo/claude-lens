@@ -252,7 +252,7 @@ export function SettingsPage() {
           User Idle Threshold
         </h2>
         <p className="text-xs text-text-secondary mb-3">
-          Ennyi perc után számít idle-nek a user, és az ezen felüli idő nem lesz munkaidőként számolva.
+          Time gaps longer than this are treated as idle and excluded from user worklog.
         </p>
         <div className="flex items-center gap-3">
           <input
@@ -263,7 +263,7 @@ export function SettingsPage() {
             onChange={(e) => setIdleMinutes(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
             className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-20"
           />
-          <span className="text-xs text-text-secondary">perc (1–60)</span>
+          <span className="text-xs text-text-secondary">minutes (1–60)</span>
           <button
             type="button"
             onClick={onIdleSave}

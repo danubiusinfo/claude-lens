@@ -758,7 +758,7 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
                             />
                             {t.user_capped && (
                               <span
-                                className="rounded bg-amber-500/15 text-amber-400 px-1.5 py-0.5 text-[10px]"
+                                className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[10px] text-yellow-700 dark:text-yellow-300"
                                 title="User idle gap was capped at the configured threshold"
                               >
                                 capped
