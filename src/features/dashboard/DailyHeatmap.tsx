@@ -78,35 +78,27 @@ const HeatmapCell = memo(function HeatmapCell({ cell, intensityColors, isOpen, o
   const hasData = !cell.isFuture && cell.record !== null;
 
   if (isOpen) {
-    return <div style={{ width: 12, height: 12 }} className="invisible" />;
-  }
-
-  if (!hasData) {
     return (
-      <div
-        className={`rounded-sm transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
-        style={{ width: 12, height: 12, backgroundColor: bg, cursor: 'default' }}
-        onMouseEnter={(e) => onHover(e, cell)}
-        onMouseLeave={onLeave}
+      <motion.div
+        layoutId={`heatmap-cell-${cell.date}`}
+        transition={LAYOUT_TRANSITION}
+        style={{
+          width: 12,
+          height: 12,
+          borderTopLeftRadius: 2,
+          borderTopRightRadius: 2,
+          borderBottomLeftRadius: 2,
+          borderBottomRightRadius: 2,
+        }}
+        className="invisible"
       />
     );
   }
 
   return (
-    <motion.div
-      layoutId={`heatmap-cell-${cell.date}`}
-      transition={LAYOUT_TRANSITION}
-      className={`transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
-      style={{
-        width: 12,
-        height: 12,
-        backgroundColor: bg,
-        cursor: 'pointer',
-        borderTopLeftRadius: 2,
-        borderTopRightRadius: 2,
-        borderBottomLeftRadius: 2,
-        borderBottomRightRadius: 2,
-      }}
+    <div
+      className={`rounded-sm transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
+      style={{ width: 12, height: 12, backgroundColor: bg, cursor: hasData ? 'pointer' : 'default' }}
       onMouseEnter={(e) => onHover(e, cell)}
       onMouseLeave={onLeave}
       onClick={() => onClick(cell)}
