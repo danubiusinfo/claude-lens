@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use crate::error::AppError;
 
-const CURRENT_VERSION: i64 = 10;
+const CURRENT_VERSION: i64 = 11;
 
 const V1_UP: &str = r#"
 CREATE TABLE IF NOT EXISTS app_state (
@@ -225,6 +225,30 @@ INSERT OR IGNORE INTO app_state (key, value, updated_at)
 VALUES ('idle_threshold_seconds', '300', datetime('now'));
 "#;
 
+const V11_UP: &str = r#"
+-- Recreate worklogs without user_work_seconds (column drop via swap)
+CREATE TABLE worklogs_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    project_path TEXT,
+    day TEXT NOT NULL,
+    claude_work_seconds INTEGER NOT NULL DEFAULT 0,
+    turn_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    UNIQUE (session_id, day)
+);
+
+DROP TABLE IF EXISTS worklogs;
+ALTER TABLE worklogs_new RENAME TO worklogs;
+
+CREATE INDEX IF NOT EXISTS idx_worklogs_day ON worklogs(day);
+CREATE INDEX IF NOT EXISTS idx_worklogs_session ON worklogs(session_id);
+CREATE INDEX IF NOT EXISTS idx_worklogs_project ON worklogs(project_path);
+
+-- Drop the idle threshold setting (no longer used)
+DELETE FROM app_state WHERE key = 'idle_threshold_seconds';
+"#;
+
 fn get_schema_version(conn: &Connection) -> Result<i64, AppError> {
     // Check if app_state table exists
     let table_exists: bool = conn.query_row(
@@ -321,6 +345,12 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         conn.execute_batch(V10_UP)?;
         set_schema_version(conn, 10)?;
         tracing::info!("Applied migration V10 (schema version 10) — worklogs table + idle_threshold setting");
+    }
+
+    if current < 11 {
+        conn.execute_batch(V11_UP)?;
+        set_schema_version(conn, 11)?;
+        tracing::info!("Applied migration V11 (schema version 11) — drop user_work_seconds + idle_threshold setting");
     }
 
     let final_version = get_schema_version(conn)?;
