@@ -63,7 +63,10 @@ export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
               layoutId={`heatmap-cell-${day}`}
               className="glass-card expanded-widget pointer-events-auto glow-cyan"
               style={{
-                borderRadius: 20,
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                borderBottomLeftRadius: 20,
+                borderBottomRightRadius: 20,
                 width: '100%',
                 maxWidth: 640,
                 padding: 24,
