@@ -1,6 +1,7 @@
 import { GlassCard } from '../../components/ui/GlassCard';
 import { useSessionWorklogs } from '../../hooks/useSessionWorklogs';
-import { WorklogPair } from '../../components/ui/WorklogPair';
+import { Bot } from 'lucide-react';
+import { formatDuration } from '../../lib/duration';
 import type { SessionRecord } from '../../types';
 
 interface SessionsListProps {
@@ -159,14 +160,12 @@ export function SessionsList({
             </div>
             {(() => {
               const w = worklogs[session.id];
-              if (!w || (w.total_user_seconds === 0 && w.total_claude_seconds === 0)) return null;
+              if (!w || w.total_claude_seconds === 0) return null;
               return (
-                <WorklogPair
-                  userSeconds={w.total_user_seconds}
-                  claudeSeconds={w.total_claude_seconds}
-                  size="sm"
-                  className="mt-1"
-                />
+                <span className="mt-1 inline-flex items-center gap-1 text-xs text-accent-purple">
+                  <Bot size={12} aria-hidden strokeWidth={2} />
+                  <span className="font-medium">{formatDuration(w.total_claude_seconds)}</span>
+                </span>
               );
             })()}
           </button>

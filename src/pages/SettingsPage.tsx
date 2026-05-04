@@ -7,8 +7,6 @@ import {
   getModelPricing,
   updateModelPricing,
   resetModelPricing,
-  getIdleThresholdMinutes,
-  updateIdleThresholdMinutes,
   recomputeWorklogs,
 } from '../lib/tauri';
 import { useToast } from '../components/ui/Toast';
@@ -38,10 +36,6 @@ export function SettingsPage() {
   const [editedPricing, setEditedPricing] = useState<ModelPricing[]>([]);
   const [savingPricing, setSavingPricing] = useState(false);
 
-  // Idle threshold state
-  const [idleMinutes, setIdleMinutes] = useState<number>(5);
-  const [savingIdle, setSavingIdle] = useState(false);
-
   const loadPricing = useCallback(async () => {
     try {
       const data = await getModelPricing();
@@ -56,17 +50,16 @@ export function SettingsPage() {
     loadPricing();
   }, [loadPricing]);
 
-  useEffect(() => {
-    getIdleThresholdMinutes().then(setIdleMinutes).catch(() => {});
-  }, []);
-
-  const onIdleSave = async () => {
-    setSavingIdle(true);
+  const [recomputing, setRecomputing] = useState(false);
+  const onRecomputeWorklogs = async () => {
+    setRecomputing(true);
     try {
-      await updateIdleThresholdMinutes(idleMinutes);
       await recomputeWorklogs();
+      toast('Worklogs recomputed');
+    } catch (e) {
+      toast('Recompute failed: ' + String(e), 'error');
     } finally {
-      setSavingIdle(false);
+      setRecomputing(false);
     }
   };
 
@@ -249,33 +242,22 @@ export function SettingsPage() {
 
       <GlassCard>
         <h2 className="text-sm font-medium text-text-primary mb-3">
-          User Idle Threshold
+          Worklog
         </h2>
         <p className="text-xs text-text-secondary mb-3">
-          Time gaps longer than this are treated as idle and excluded from user worklog.
+          Recompute worklog totals across all sessions. Use this if numbers look wrong after an upgrade.
         </p>
-        <div className="flex items-center gap-3">
-          <input
-            type="number"
-            min={1}
-            max={60}
-            value={idleMinutes}
-            onChange={(e) => setIdleMinutes(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
-            className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-20"
-          />
-          <span className="text-xs text-text-secondary">minutes (1–60)</span>
-          <button
-            type="button"
-            onClick={onIdleSave}
-            disabled={savingIdle}
-            className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
-              bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20
-              hover:bg-accent-cyan/20
-              disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            {savingIdle ? 'Recomputing…' : 'Save'}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onRecomputeWorklogs}
+          disabled={recomputing}
+          className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
+            bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20
+            hover:bg-accent-cyan/20
+            disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          {recomputing ? 'Recomputing…' : 'Recompute Worklogs'}
+        </button>
       </GlassCard>
 
       <GlassCard>

@@ -65,7 +65,6 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: 
   if (widgetType === 'worklog') {
     const worklogSeries = (worklogData?.timeseries ?? []).map((p) => ({
       day: p.day,
-      user: Math.round(p.user_seconds / 60),
       claude: Math.round(p.claude_seconds / 60),
     }));
 
@@ -112,10 +111,6 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: 
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={worklogSeries} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
               <defs>
-                <linearGradient id="grad-user" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.02} />
-                </linearGradient>
                 <linearGradient id="grad-claude" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
                   <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
@@ -141,26 +136,15 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: 
               <Tooltip
                 contentStyle={tooltipStyle}
                 labelFormatter={(label) => formatDate(String(label))}
-                formatter={(value, name) => [
+                formatter={(value) => [
                   formatMinutes(typeof value === 'number' ? value : 0),
-                  name === 'user' ? 'User' : 'Claude',
+                  'Claude',
                 ]}
                 cursor={{ stroke: colors.axis, strokeDasharray: '3 3' }}
               />
               <Area
                 type="monotone"
-                dataKey="user"
-                stackId="1"
-                stroke="#06b6d4"
-                strokeWidth={2}
-                fill="url(#grad-user)"
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: '#06b6d4', fill: 'var(--bg-primary)' }}
-              />
-              <Area
-                type="monotone"
                 dataKey="claude"
-                stackId="1"
                 stroke="#a855f7"
                 strokeWidth={2}
                 fill="url(#grad-claude)"

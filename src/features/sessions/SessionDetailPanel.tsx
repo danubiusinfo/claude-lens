@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { CopyButton } from '../../components/ui/CopyButton';
-import { WorklogPair } from '../../components/ui/WorklogPair';
+import { formatDuration } from '../../lib/duration';
 import { getSessionMessages, toggleSessionBookmark, renameSession } from '../../lib/tauri';
 import { useTauriEvent } from '../../hooks/useTauriEvent';
 import { useSessionWorklog } from '../../hooks/useSessionWorklog';
@@ -743,17 +743,16 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
               )}
 
               {/* Worklog */}
-              {worklog && (worklog.total_user_seconds > 0 || worklog.total_claude_seconds > 0) && (
+              {worklog && worklog.total_claude_seconds > 0 && (
                 <div className="space-y-3">
                   <div className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wide">
                     Worklog
                   </div>
                   <div className="flex items-baseline gap-6">
-                    <WorklogPair
-                      userSeconds={worklog.total_user_seconds}
-                      claudeSeconds={worklog.total_claude_seconds}
-                      size="lg"
-                    />
+                    <span className="inline-flex items-center gap-2 text-2xl font-bold text-accent-purple whitespace-nowrap">
+                      <Bot size={18} aria-hidden strokeWidth={2} />
+                      {formatDuration(worklog.total_claude_seconds)}
+                    </span>
                     <div className="text-xs text-[var(--text-secondary)]">
                       {worklog.turn_count} turn{worklog.turn_count === 1 ? '' : 's'}
                     </div>
@@ -764,21 +763,10 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
                       {turns.map((t) => (
                         <div key={t.index} className="flex items-center justify-between px-3 py-2 text-xs">
                           <span className="text-[var(--text-secondary)]">Turn {t.index}</span>
-                          <div className="flex items-center gap-3">
-                            <WorklogPair
-                              userSeconds={t.user_seconds}
-                              claudeSeconds={t.claude_seconds}
-                              size="sm"
-                            />
-                            {t.user_capped && (
-                              <span
-                                className="rounded bg-yellow-500/10 px-1.5 py-0.5 text-[10px] text-yellow-700 dark:text-yellow-300"
-                                title="User idle gap was capped at the configured threshold"
-                              >
-                                capped
-                              </span>
-                            )}
-                          </div>
+                          <span className="inline-flex items-center gap-1 text-accent-purple">
+                            <Bot size={12} aria-hidden strokeWidth={2} />
+                            <span className="font-medium">{formatDuration(t.claude_seconds)}</span>
+                          </span>
                         </div>
                       ))}
                     </div>

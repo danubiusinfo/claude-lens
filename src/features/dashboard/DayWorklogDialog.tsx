@@ -1,10 +1,10 @@
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
-import { Clock, X } from 'lucide-react';
+import { Bot, Clock, X } from 'lucide-react';
 
 import { useDayWorklog } from '../../hooks/useDayWorklog';
-import { WorklogPair } from '../../components/ui/WorklogPair';
+import { formatDuration } from '../../lib/duration';
 
 interface DayWorklogDialogProps {
   day: string | null;
@@ -13,7 +13,6 @@ interface DayWorklogDialogProps {
 
 function projectName(path: string | null): string {
   if (!path) return '(no project)';
-  // Take the last non-empty path segment, normalised across / and \
   const parts = path.split(/[\\/]/).filter(Boolean);
   return parts[parts.length - 1] || path;
 }
@@ -42,7 +41,6 @@ export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
 
   if (!day) return null;
 
-  const totalUser = rows.reduce((s, r) => s + r.user_work_seconds, 0);
   const totalClaude = rows.reduce((s, r) => s + r.claude_work_seconds, 0);
   const totalSessions = rows.reduce((s, r) => s + r.session_count, 0);
 
@@ -84,8 +82,9 @@ export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="rounded-md px-3 py-1.5 bg-[var(--bg-card)]">
-                <WorklogPair userSeconds={totalUser} claudeSeconds={totalClaude} size="sm" />
+              <div className="rounded-md px-3 py-1.5 bg-[var(--bg-card)] inline-flex items-center gap-1 text-xs text-accent-purple">
+                <Bot size={12} aria-hidden strokeWidth={2} />
+                <span className="font-medium">{formatDuration(totalClaude)}</span>
               </div>
               <button
                 type="button"
@@ -119,11 +118,10 @@ export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
                         {r.session_count} session{r.session_count === 1 ? '' : 's'}
                       </div>
                     </div>
-                    <WorklogPair
-                      userSeconds={r.user_work_seconds}
-                      claudeSeconds={r.claude_work_seconds}
-                      size="sm"
-                    />
+                    <span className="inline-flex items-center gap-1 text-xs text-accent-purple">
+                      <Bot size={12} aria-hidden strokeWidth={2} />
+                      <span className="font-medium">{formatDuration(r.claude_work_seconds)}</span>
+                    </span>
                   </div>
                 );
               })}

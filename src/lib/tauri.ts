@@ -190,11 +190,3 @@ export async function recomputeWorklogs(): Promise<void> {
   await invoke<void>('recompute_worklogs');
 }
 
-export async function getIdleThresholdMinutes(): Promise<number> {
-  return invoke<number>('get_idle_threshold_minutes');
-}
-
-export async function updateIdleThresholdMinutes(minutes: number): Promise<void> {
-  await invoke<void>('update_idle_threshold_minutes', { minutes });
-}
-
