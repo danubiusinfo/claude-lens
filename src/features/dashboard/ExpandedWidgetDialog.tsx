@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { TimeRange, TimeseriesPoint, WorklogSummary } from '../../types';
+import type { TimeRange, TimeseriesPoint } from '../../types';
 import { getTokenTimeseries } from '../../lib/tauri';
 import { useDashboardWorklog } from '../../hooks/useDashboardWorklog';
 import { TimeRangeSelector } from './TimeRangeSelector';
 import { ExpandedWidgetChart, type WidgetType } from './ExpandedWidgetChart';
 import { fillGaps } from './timeseriesFill';
+
+export type { WidgetType };
 
 interface ExpandedWidgetDialogProps {
   widgetType: WidgetType;
@@ -18,45 +20,52 @@ const TITLE: Record<WidgetType, string> = {
   worklog: 'Working time',
 };
 
-export function ExpandedWidgetDialog({
-  widgetType,
-  dashboardRange,
-  onClose,
-}: ExpandedWidgetDialogProps) {
-  const [dialogRange, setDialogRange] = useState<TimeRange>(dashboardRange);
+function Spinner() {
+  return (
+    <div
+      className="absolute top-0 right-0 w-3 h-3 border-2 border-[var(--text-secondary)]/30 border-t-[var(--text-secondary)] rounded-full animate-spin"
+      aria-label="Loading"
+    />
+  );
+}
 
-  const [tokenSeries, setTokenSeries] = useState<TimeseriesPoint[]>([]);
-  const [tokenLoading, setTokenLoading] = useState(false);
-
-  const needsTokens = widgetType === 'tokens' || widgetType === 'cost';
+function TokensCostContent({ widgetType, range }: { widgetType: 'tokens' | 'cost'; range: TimeRange }) {
+  const [series, setSeries] = useState<TimeseriesPoint[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!needsTokens) return;
     let cancelled = false;
-    setTokenLoading(true);
-    getTokenTimeseries(dialogRange)
-      .then(series => {
-        if (!cancelled) setTokenSeries(series);
-      })
-      .catch(err => {
-        if (!cancelled) console.error('dialog token fetch failed:', err);
-      })
-      .finally(() => {
-        if (!cancelled) setTokenLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [dialogRange, needsTokens]);
+    setLoading(true);
+    getTokenTimeseries(range)
+      .then(s => { if (!cancelled) setSeries(s); })
+      .catch(err => { if (!cancelled) console.error('dialog token fetch failed:', err); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [range]);
 
-  const filled = useMemo(
-    () => (needsTokens ? fillGaps(tokenSeries, dialogRange) : []),
-    [tokenSeries, dialogRange, needsTokens],
+  const filled = useMemo(() => fillGaps(series, range), [series, range]);
+
+  return (
+    <div className="relative flex-1 min-h-0 flex flex-col">
+      {loading && <Spinner />}
+      <ExpandedWidgetChart widgetType={widgetType} data={filled} />
+    </div>
   );
+}
 
-  const { data: worklog, loading: worklogLoading } = useDashboardWorklog(dialogRange);
+function WorklogContent({ range }: { range: TimeRange }) {
+  const { data: worklog, loading } = useDashboardWorklog(range);
 
-  const isLoading = needsTokens ? tokenLoading : worklogLoading;
+  return (
+    <div className="relative flex-1 min-h-0 flex flex-col">
+      {loading && <Spinner />}
+      <ExpandedWidgetChart widgetType="worklog" data={[]} worklogData={worklog} />
+    </div>
+  );
+}
+
+export function ExpandedWidgetDialog({ widgetType, dashboardRange, onClose }: ExpandedWidgetDialogProps) {
+  const [dialogRange, setDialogRange] = useState<TimeRange>(dashboardRange);
 
   return (
     <div className="flex flex-col h-full">
@@ -66,9 +75,6 @@ export function ExpandedWidgetDialog({
         </span>
         <div className="flex items-center gap-2">
           <TimeRangeSelector value={dialogRange} onChange={setDialogRange} size="sm" />
-          {isLoading && (
-            <div className="w-3 h-3 border-2 border-[var(--text-secondary)]/30 border-t-[var(--text-secondary)] rounded-full animate-spin" />
-          )}
           <button
             onClick={(e) => { e.stopPropagation(); onClose(); }}
             className="w-7 h-7 flex items-center justify-center rounded-full
@@ -83,11 +89,11 @@ export function ExpandedWidgetDialog({
         </div>
       </div>
 
-      <ExpandedWidgetChart
-        widgetType={widgetType}
-        data={filled}
-        worklogData={worklog as WorklogSummary | null | undefined}
-      />
+      {widgetType === 'worklog' ? (
+        <WorklogContent range={dialogRange} />
+      ) : (
+        <TokensCostContent widgetType={widgetType} range={dialogRange} />
+      )}
     </div>
   );
 }
