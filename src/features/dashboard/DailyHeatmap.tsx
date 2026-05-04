@@ -96,7 +96,7 @@ const HeatmapCell = memo(function HeatmapCell({ cell, intensityColors, isOpen, o
     <motion.div
       layoutId={`heatmap-cell-${cell.date}`}
       transition={LAYOUT_TRANSITION}
-      className={`rounded-sm transition-colors ${cell.isToday ? 'heatmap-today' : ''}`}
+      className={`rounded-sm transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
       style={{ width: 12, height: 12, backgroundColor: bg, cursor: 'pointer', borderRadius: 2 }}
       onMouseEnter={(e) => onHover(e, cell)}
       onMouseLeave={onLeave}
