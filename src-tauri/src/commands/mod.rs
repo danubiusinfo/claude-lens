@@ -4,3 +4,4 @@ pub mod plans;
 pub mod settings;
 pub mod status;
 pub mod user;
+pub mod worklog;

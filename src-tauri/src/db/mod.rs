@@ -990,6 +990,20 @@ impl Database {
         Ok(out)
     }
 
+    pub fn get_earliest_session_day(&self) -> Result<Option<String>, AppError> {
+        let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
+        let res: Result<Option<String>, _> = conn.query_row(
+            "SELECT MIN(substr(first_seen_at, 1, 10)) FROM sessions",
+            [],
+            |r| r.get::<_, Option<String>>(0),
+        );
+        match res {
+            Ok(v) => Ok(v),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e.to_string())),
+        }
+    }
+
     // ── Housekeeping ────────────────────────────────────────────
 
     pub fn clear_all_data(&self) -> Result<(), AppError> {

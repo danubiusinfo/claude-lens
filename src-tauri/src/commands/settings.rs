@@ -41,3 +41,21 @@ pub async fn reset_model_pricing(
 ) -> Result<Vec<ModelPricing>, AppError> {
     state.database().reset_model_pricing()
 }
+
+#[tauri::command]
+pub async fn get_idle_threshold_minutes(
+    state: State<'_, AppState>,
+) -> Result<i64, AppError> {
+    let secs = state.database().get_idle_threshold_seconds()?;
+    Ok((secs / 60).max(1))
+}
+
+#[tauri::command]
+pub async fn update_idle_threshold_minutes(
+    state: State<'_, AppState>,
+    minutes: i64,
+) -> Result<(), AppError> {
+    let clamped = minutes.clamp(1, 60);
+    state.database().set_idle_threshold_seconds(clamped * 60)?;
+    Ok(())
+}

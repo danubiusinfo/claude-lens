@@ -10,6 +10,34 @@ use crate::jsonl::types::SessionMessage;
 use crate::models::{DailyUsageRecord, SessionRecord};
 use crate::state::AppState;
 
+/// Convert a range string (e.g. "Today", "WorkWeek", "Week", "Month", "All") into a
+/// (start_day, end_day) pair formatted as YYYY-MM-DD.
+pub fn range_to_days(
+    range: &str,
+    db: &crate::db::Database,
+) -> Result<(String, String), AppError> {
+    use chrono::{Datelike, Duration, Local, NaiveDate};
+    let today: NaiveDate = Local::now().date_naive();
+    let (start, end) = match range {
+        "Today" => (today, today),
+        "WorkWeek" => {
+            let weekday = today.weekday().num_days_from_monday() as i64;
+            (today - Duration::days(weekday), today)
+        }
+        "Week" => (today - Duration::days(6), today),
+        "Month" => (today - Duration::days(29), today),
+        "All" => {
+            let earliest: Option<String> = db.get_earliest_session_day().ok().flatten();
+            let start = earliest
+                .and_then(|s| NaiveDate::parse_from_str(&s, "%Y-%m-%d").ok())
+                .unwrap_or(today);
+            (start, today)
+        }
+        _ => (today, today),
+    };
+    Ok((start.format("%Y-%m-%d").to_string(), end.format("%Y-%m-%d").to_string()))
+}
+
 #[derive(Debug, Deserialize)]
 pub enum TimeRange {
     Today,
