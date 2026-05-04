@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1e2e"/>
+      <stop offset="100%" style="stop-color:#11111b"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#67e8f9"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4b5fd"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect x="40" y="40" width="944" height="944" rx="210" ry="210" fill="url(#bg)"/>
+  <rect x="40" y="40" width="944" height="944" rx="210" ry="210" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+
+  <!-- Magnifying glass - lens circle (thick, bold) -->
+  <circle cx="430" cy="410" r="220" fill="none" stroke="url(#cyan)" stroke-width="48"/>
+
+  <!-- Magnifying glass - handle -->
+  <line x1="598" y1="578" x2="780" y2="760" stroke="url(#purple)" stroke-width="56" stroke-linecap="round"/>
+
+  <!-- Terminal prompt ">" inside lens -->
+  <path d="M 320 360 L 420 415 L 320 470" fill="none" stroke="#67e8f9" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Terminal cursor "_" inside lens -->
+  <line x1="450" y1="470" x2="545" y2="470" stroke="#a78bfa" stroke-width="36" stroke-linecap="round"/>
+</svg>
