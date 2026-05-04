@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use crate::error::AppError;
 
-const CURRENT_VERSION: i64 = 9;
+const CURRENT_VERSION: i64 = 10;
 
 const V1_UP: &str = r#"
 CREATE TABLE IF NOT EXISTS app_state (
@@ -204,6 +204,27 @@ DROP TABLE IF EXISTS sentiment_cache;
 DELETE FROM app_state WHERE key = 'sentiment_enabled';
 "#;
 
+const V10_UP: &str = r#"
+CREATE TABLE IF NOT EXISTS worklogs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    project_path TEXT,
+    day TEXT NOT NULL,
+    user_work_seconds INTEGER NOT NULL DEFAULT 0,
+    claude_work_seconds INTEGER NOT NULL DEFAULT 0,
+    turn_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    UNIQUE (session_id, day)
+);
+
+CREATE INDEX IF NOT EXISTS idx_worklogs_day ON worklogs(day);
+CREATE INDEX IF NOT EXISTS idx_worklogs_session ON worklogs(session_id);
+CREATE INDEX IF NOT EXISTS idx_worklogs_project ON worklogs(project_path);
+
+INSERT OR IGNORE INTO app_state (key, value, updated_at)
+VALUES ('idle_threshold_seconds', '300', datetime('now'));
+"#;
+
 fn get_schema_version(conn: &Connection) -> Result<i64, AppError> {
     // Check if app_state table exists
     let table_exists: bool = conn.query_row(
@@ -294,6 +315,12 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         conn.execute_batch(V9_UP)?;
         set_schema_version(conn, 9)?;
         tracing::info!("Applied migration V9 (schema version 9) — removed sentiment_cache");
+    }
+
+    if current < 10 {
+        conn.execute_batch(V10_UP)?;
+        set_schema_version(conn, 10)?;
+        tracing::info!("Applied migration V10 (schema version 10) — worklogs table + idle_threshold setting");
     }
 
     let final_version = get_schema_version(conn)?;
