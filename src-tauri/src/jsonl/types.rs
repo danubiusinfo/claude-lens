@@ -206,7 +206,6 @@ pub struct WorklogRow {
     pub session_id: String,
     pub project_path: Option<String>,
     pub day: String,                    // YYYY-MM-DD (UTC)
-    pub user_work_seconds: i64,
     pub claude_work_seconds: i64,
     pub turn_count: i64,
 }
@@ -215,9 +214,7 @@ pub struct WorklogRow {
 #[derive(Debug, Clone, Serialize)]
 pub struct TurnWorklog {
     pub index: i64,                     // 1-based
-    pub user_message_at: String,        // RFC3339
-    pub last_assistant_at: String,      // RFC3339
-    pub user_seconds: i64,
+    pub user_message_at: String,        // RFC3339 — the real user message timestamp
+    pub last_assistant_at: String,      // RFC3339 — the turn's last assistant end_timestamp
     pub claude_seconds: i64,
-    pub user_capped: bool,
 }

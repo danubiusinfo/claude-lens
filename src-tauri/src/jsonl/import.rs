@@ -219,11 +219,9 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                 // Compute worklog rows from the same message list, keyed on the DB UUID
                 // so that frontend queries (which use SessionRecord.id) resolve correctly.
                 let messages = extract_session_messages(&session_entries, &pricing);
-                let idle_threshold = db.get_idle_threshold_seconds().unwrap_or(300);
                 let project_path_str = enriched.project_path.as_deref();
                 let (worklog_rows, _turns) = crate::jsonl::worklog::calculate_worklog(
                     &messages,
-                    idle_threshold,
                     project_path_str,
                     &db_session_id,
                 );

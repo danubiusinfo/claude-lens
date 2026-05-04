@@ -134,8 +134,6 @@ pub fn run() {
             commands::worklog::get_day_worklog_by_project,
             commands::worklog::list_session_worklogs,
             commands::worklog::recompute_worklogs,
-            commands::settings::get_idle_threshold_minutes,
-            commands::settings::update_idle_threshold_minutes,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

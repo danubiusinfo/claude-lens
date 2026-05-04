@@ -63,18 +63,6 @@ impl Database {
         self.set_app_setting(key, value)
     }
 
-    pub fn get_idle_threshold_seconds(&self) -> Result<i64, AppError> {
-        Ok(self
-            .get_app_state("idle_threshold_seconds")?
-            .and_then(|v| v.parse::<i64>().ok())
-            .unwrap_or(300))
-    }
-
-    pub fn set_idle_threshold_seconds(&self, seconds: i64) -> Result<(), AppError> {
-        let clamped = seconds.clamp(60, 3600);
-        self.set_app_state("idle_threshold_seconds", &clamped.to_string())
-    }
-
     // ── Sessions ────────────────────────────────────────────────
 
     const SESSION_COLUMNS: &str = "id, source_session_id, first_seen_at, last_seen_at,
@@ -836,11 +824,10 @@ impl Database {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
-            "INSERT INTO worklogs (session_id, project_path, day, user_work_seconds, claude_work_seconds, turn_count, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            "INSERT INTO worklogs (session_id, project_path, day, claude_work_seconds, turn_count, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)
              ON CONFLICT(session_id, day) DO UPDATE SET
                 project_path = excluded.project_path,
-                user_work_seconds = excluded.user_work_seconds,
                 claude_work_seconds = excluded.claude_work_seconds,
                 turn_count = excluded.turn_count,
                 updated_at = excluded.updated_at",
@@ -848,7 +835,6 @@ impl Database {
                 row.session_id,
                 row.project_path,
                 row.day,
-                row.user_work_seconds,
                 row.claude_work_seconds,
                 row.turn_count,
                 now,
@@ -875,31 +861,30 @@ impl Database {
     pub fn get_worklog_summary_for_session(
         &self,
         session_id: &str,
-    ) -> Result<(i64, i64, i64), AppError> {
+    ) -> Result<(i64, i64), AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
-        let row: (Option<i64>, Option<i64>, Option<i64>) = conn.query_row(
+        let row: (Option<i64>, Option<i64>) = conn.query_row(
             "SELECT
-                COALESCE(SUM(user_work_seconds), 0),
                 COALESCE(SUM(claude_work_seconds), 0),
                 COALESCE(SUM(turn_count), 0)
              FROM worklogs WHERE session_id = ?1",
             rusqlite::params![session_id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            |r| Ok((r.get(0)?, r.get(1)?)),
         )?;
-        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0), row.2.unwrap_or(0)))
+        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0)))
     }
 
     pub fn list_worklog_summaries(
         &self,
         session_ids: &[String],
-    ) -> Result<std::collections::HashMap<String, (i64, i64, i64)>, AppError> {
+    ) -> Result<std::collections::HashMap<String, (i64, i64)>, AppError> {
         if session_ids.is_empty() {
             return Ok(std::collections::HashMap::new());
         }
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let placeholders = vec!["?"; session_ids.len()].join(",");
         let sql = format!(
-            "SELECT session_id, SUM(user_work_seconds), SUM(claude_work_seconds), SUM(turn_count)
+            "SELECT session_id, SUM(claude_work_seconds), SUM(turn_count)
              FROM worklogs WHERE session_id IN ({})
              GROUP BY session_id",
             placeholders
@@ -911,13 +896,12 @@ impl Database {
                 r.get::<_, String>(0)?,
                 r.get::<_, Option<i64>>(1)?.unwrap_or(0),
                 r.get::<_, Option<i64>>(2)?.unwrap_or(0),
-                r.get::<_, Option<i64>>(3)?.unwrap_or(0),
             ))
         })?;
         let mut map = std::collections::HashMap::new();
         for row in rows {
-            let (sid, u, c, t) = row?;
-            map.insert(sid, (u, c, t));
+            let (sid, c, t) = row?;
+            map.insert(sid, (c, t));
         }
         Ok(map)
     }
@@ -926,33 +910,32 @@ impl Database {
         &self,
         start_day: &str,
         end_day: &str,
-    ) -> Result<(i64, i64, i64), AppError> {
+    ) -> Result<(i64, i64), AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
-        let row: (Option<i64>, Option<i64>, Option<i64>) = conn.query_row(
+        let row: (Option<i64>, Option<i64>) = conn.query_row(
             "SELECT
-                COALESCE(SUM(user_work_seconds), 0),
                 COALESCE(SUM(claude_work_seconds), 0),
                 COUNT(DISTINCT session_id)
              FROM worklogs WHERE day >= ?1 AND day <= ?2",
             rusqlite::params![start_day, end_day],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            |r| Ok((r.get(0)?, r.get(1)?)),
         )?;
-        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0), row.2.unwrap_or(0)))
+        Ok((row.0.unwrap_or(0), row.1.unwrap_or(0)))
     }
 
     pub fn get_worklog_timeseries(
         &self,
         start_day: &str,
         end_day: &str,
-    ) -> Result<Vec<(String, i64, i64)>, AppError> {
+    ) -> Result<Vec<(String, i64)>, AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let mut stmt = conn.prepare(
-            "SELECT day, COALESCE(SUM(user_work_seconds), 0), COALESCE(SUM(claude_work_seconds), 0)
+            "SELECT day, COALESCE(SUM(claude_work_seconds), 0)
              FROM worklogs WHERE day >= ?1 AND day <= ?2
              GROUP BY day ORDER BY day ASC",
         )?;
         let rows = stmt.query_map(rusqlite::params![start_day, end_day], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?))
+            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
         })?;
         let mut out = Vec::new();
         for row in rows {
@@ -964,23 +947,21 @@ impl Database {
     pub fn get_worklog_by_project_for_day(
         &self,
         day: &str,
-    ) -> Result<Vec<(Option<String>, i64, i64, i64)>, AppError> {
+    ) -> Result<Vec<(Option<String>, i64, i64)>, AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let mut stmt = conn.prepare(
             "SELECT project_path,
                     COUNT(DISTINCT session_id),
-                    COALESCE(SUM(user_work_seconds), 0),
                     COALESCE(SUM(claude_work_seconds), 0)
              FROM worklogs WHERE day = ?1
              GROUP BY project_path
-             ORDER BY (SUM(user_work_seconds) + SUM(claude_work_seconds)) DESC",
+             ORDER BY SUM(claude_work_seconds) DESC",
         )?;
         let rows = stmt.query_map(rusqlite::params![day], |r| {
             Ok((
                 r.get::<_, Option<String>>(0)?,
                 r.get::<_, i64>(1)?,
                 r.get::<_, i64>(2)?,
-                r.get::<_, i64>(3)?,
             ))
         })?;
         let mut out = Vec::new();
