@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback, memo, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { GlassCard } from '../../components/ui/GlassCard';
+import { DayWorklogDialog } from './DayWorklogDialog';
 import type { DailyUsageRecord } from '../../types';
 
 interface DailyHeatmapProps {
@@ -65,17 +66,20 @@ interface HeatmapCellProps {
   intensityColors: (string | null)[];
   onHover: (e: React.MouseEvent, cell: CellData) => void;
   onLeave: () => void;
+  onClick: (cell: CellData) => void;
 }
 
-const HeatmapCell = memo(function HeatmapCell({ cell, intensityColors, onHover, onLeave }: HeatmapCellProps) {
+const HeatmapCell = memo(function HeatmapCell({ cell, intensityColors, onHover, onLeave, onClick }: HeatmapCellProps) {
   const bg = cell.isFuture ? undefined : intensityColors[cell.intensity] ?? undefined;
+  const hasData = !cell.isFuture && cell.record !== null;
 
   return (
     <div
-      className={`rounded-sm cursor-pointer transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
-      style={{ width: 12, height: 12, backgroundColor: bg }}
+      className={`rounded-sm transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
+      style={{ width: 12, height: 12, backgroundColor: bg, cursor: hasData ? 'pointer' : 'default' }}
       onMouseEnter={(e) => onHover(e, cell)}
       onMouseLeave={onLeave}
+      onClick={() => onClick(cell)}
     />
   );
 });
@@ -91,6 +95,13 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
   const isLight = useSyncExternalStore(subscribeTheme, getIsLight);
   const intensityColors = isLight ? INTENSITY_LIGHT : INTENSITY_DARK;
   const [tooltip, setTooltip] = useState<{ x: number; y: number; cell: CellData } | null>(null);
+  const [openDay, setOpenDay] = useState<string | null>(null);
+
+  const handleCellClick = useCallback((cell: CellData) => {
+    if (!cell.isFuture && cell.record !== null) {
+      setOpenDay(cell.date);
+    }
+  }, []);
 
   const handleCellHover = useCallback((e: React.MouseEvent, cell: CellData) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -243,6 +254,7 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
                 intensityColors={intensityColors}
                 onHover={handleCellHover}
                 onLeave={handleCellLeave}
+                onClick={handleCellClick}
               />
             ))}
           </div>
@@ -250,6 +262,8 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
       </div>
 
     </GlassCard>
+
+      <DayWorklogDialog day={openDay} onClose={() => setOpenDay(null)} />
 
       {/* Tooltip — portaled to body to escape backdrop-filter containing block */}
       {tooltip && createPortal(
