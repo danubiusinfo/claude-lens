@@ -34,7 +34,7 @@ export function getDateRange(range: TimeRange): { start: Date; end: Date } {
     }
     case 'All':
     default:
-      return { start: today, end: today }; // fallback, won't fill for 'All'
+      return { start: today, end: today }; // only reached if a caller bypasses fillGaps's All-branch — kept as a safe fallback
   }
 }
 

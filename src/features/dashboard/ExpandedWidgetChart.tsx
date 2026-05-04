@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { motion } from 'motion/react';
 import {
   AreaChart,
@@ -47,7 +46,6 @@ const WIDGET_CONFIG = {
 
 export function ExpandedWidgetChart({ widgetType, data, worklogData }: ExpandedWidgetChartProps) {
   const colors = useChartColors();
-  const chartData = useMemo(() => data, [data]);
 
   const tooltipStyle = {
     backgroundColor: colors.tooltipBg,
@@ -137,7 +135,7 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData }: ExpandedW
       transition={{ delay: 0.25, duration: 0.3 }}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <AreaChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
           <defs>
             {config.areas.map(area => (
               <linearGradient key={area.dataKey} id={`grad-${area.dataKey}`} x1="0" y1="0" x2="0" y2="1">

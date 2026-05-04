@@ -3,13 +3,11 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import type { DashboardSummary, TimeseriesPoint, TimeRange } from '../../types';
 import { SparklineArea } from '../../components/ui/SparklineArea';
-import { ExpandedWidgetDialog } from './ExpandedWidgetDialog';
+import { ExpandedWidgetDialog, type WidgetType } from './ExpandedWidgetDialog';
 import { useDashboardWorklog } from '../../hooks/useDashboardWorklog';
 import { WorklogBentoCard } from './WorklogBentoCard';
 import { fillGaps } from './timeseriesFill';
 import { formatTokens, formatCost } from './format';
-
-type WidgetType = 'tokens' | 'cost' | 'worklog';
 
 interface BentoSummaryProps {
   summary: DashboardSummary | null;
