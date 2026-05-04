@@ -4,7 +4,7 @@ use crate::db::Database;
 use crate::models::{ImportRecord, SessionRecord, SourceFileRecord, SourceRecordEntry};
 
 use super::discovery::discover_jsonl_paths;
-use super::normalize::{extract_search_content, normalize_session_file, normalize_sessions};
+use super::normalize::{extract_search_content, extract_session_messages, normalize_session_file, normalize_sessions};
 use super::parser::{parse_history_line, parse_session_line};
 use super::types::{ImportResult, ParsedHistoryEntry, RawSessionEntry};
 
@@ -209,6 +209,25 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                             );
                         }
                         sessions_created += 1;
+                    }
+                }
+
+                // Compute worklog rows from the same message list
+                let messages = extract_session_messages(&session_entries, &pricing);
+                let idle_threshold = db.get_idle_threshold_seconds().unwrap_or(300);
+                let project_path_str = enriched.project_path.as_deref();
+                let (worklog_rows, _turns) = crate::jsonl::worklog::calculate_worklog(
+                    &messages,
+                    idle_threshold,
+                    project_path_str,
+                    &enriched.session_id,
+                );
+
+                // Replace existing worklog rows for this session (so re-imports stay correct)
+                db.delete_worklogs_for_session(&enriched.session_id).ok();
+                for row in &worklog_rows {
+                    if let Err(e) = db.upsert_worklog(row) {
+                        tracing::warn!("failed to upsert worklog row: {}", e);
                     }
                 }
 
