@@ -117,13 +117,18 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
   const isLight = useSyncExternalStore(subscribeTheme, getIsLight);
   const intensityColors = isLight ? INTENSITY_LIGHT : INTENSITY_DARK;
   const [tooltip, setTooltip] = useState<{ x: number; y: number; cell: CellData } | null>(null);
-  const [openDay, setOpenDay] = useState<string | null>(null);
+  const [dialogDay, setDialogDay] = useState<string | null>(null);
+  const [placeholderDay, setPlaceholderDay] = useState<string | null>(null);
 
   const handleCellClick = useCallback((cell: CellData) => {
     if (!cell.isFuture && cell.record !== null) {
-      setOpenDay(cell.date);
+      setDialogDay(cell.date);
+      setPlaceholderDay(cell.date);
     }
   }, []);
+
+  const handleClose = useCallback(() => setDialogDay(null), []);
+  const handleExitComplete = useCallback(() => setPlaceholderDay(null), []);
 
   const handleCellHover = useCallback((e: React.MouseEvent, cell: CellData) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -274,7 +279,7 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
                 key={cell.date}
                 cell={cell}
                 intensityColors={intensityColors}
-                isOpen={openDay === cell.date}
+                isOpen={placeholderDay === cell.date}
                 onHover={handleCellHover}
                 onLeave={handleCellLeave}
                 onClick={handleCellClick}
@@ -286,7 +291,11 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
 
     </GlassCard>
 
-      <DayWorklogDialog day={openDay} onClose={() => setOpenDay(null)} />
+      <DayWorklogDialog
+        day={dialogDay}
+        onClose={handleClose}
+        onExitComplete={handleExitComplete}
+      />
 
       {/* Tooltip — portaled to body to escape backdrop-filter containing block */}
       {tooltip && createPortal(

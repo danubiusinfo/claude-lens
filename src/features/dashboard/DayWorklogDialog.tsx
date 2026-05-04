@@ -9,6 +9,7 @@ import { formatDuration } from '../../lib/duration';
 interface DayWorklogDialogProps {
   day: string | null;
   onClose: () => void;
+  onExitComplete?: () => void;
 }
 
 const LAYOUT_TRANSITION = { layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } };
@@ -29,7 +30,7 @@ function formatDayHeading(day: string): string {
   });
 }
 
-export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
+export function DayWorklogDialog({ day, onClose, onExitComplete }: DayWorklogDialogProps) {
   const { data: rows } = useDayWorklog(day);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
   const totalSessions = rows.reduce((s, r) => s + r.session_count, 0);
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={onExitComplete}>
       {day && (
         <>
           <motion.div
@@ -55,7 +56,7 @@ export function DayWorklogDialog({ day, onClose }: DayWorklogDialogProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.4 }}
             onClick={onClose}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-8">
