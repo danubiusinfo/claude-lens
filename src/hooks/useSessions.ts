@@ -156,21 +156,35 @@ export function useSessions(): SessionsData {
     fetchSessions(newOffset, true, selectedProject);
   }, [offset, fetchSessions, searchQuery, showBookmarked, selectedProject]);
 
+  const refreshLoadedWindow = useCallback(async () => {
+    setError(null);
+    try {
+      const limit = offset + PAGE_SIZE;
+      const result = await listSessions(limit, 0, selectedProject);
+      setSessions(result);
+      setHasMore(result.length >= limit);
+    } catch (err) {
+      console.error('Failed to refresh sessions window:', err);
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [offset, selectedProject]);
+
   const handleDbUpdate = useCallback(() => {
-    setOffset(0);
-    // Refresh project list
+    // do NOT reset offset — we want to keep the user's current scroll position
     listDistinctProjects().then(setProjects).catch(console.error);
     if (searchQuery.trim()) {
       fetchSearch(searchQuery.trim());
     } else if (showBookmarked) {
       fetchBookmarked();
     } else {
-      fetchSessions(0, false, selectedProject);
+      refreshLoadedWindow();
     }
     if (selectedId) {
       getSessionDetail(selectedId).then(setSelectedSession).catch(console.error);
     }
-  }, [fetchSessions, fetchBookmarked, fetchSearch, showBookmarked, searchQuery, selectedId, selectedProject]);
+  }, [refreshLoadedWindow, fetchBookmarked, fetchSearch, showBookmarked, searchQuery, selectedId]);
 
   useTauriEvent('db-updated', handleDbUpdate);
 

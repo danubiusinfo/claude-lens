@@ -2,6 +2,20 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import {
+  FileText,
+  Pencil,
+  FilePlus2,
+  Terminal,
+  Search,
+  Globe,
+  Bot,
+  Settings as SettingsIcon,
+  ClipboardList,
+  CheckSquare,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { CopyButton } from '../../components/ui/CopyButton';
 import { WorklogPair } from '../../components/ui/WorklogPair';
@@ -97,22 +111,22 @@ function ThinkingBlockView({ block }: { block: ContentBlock & { block_type: 'thi
   );
 }
 
-const TOOL_ICONS: Record<string, { icon: string; color: string }> = {
-  Read:       { icon: '📄', color: 'var(--accent-cyan)' },
-  Write:      { icon: '✏️', color: 'var(--accent-purple)' },
-  Edit:       { icon: '🔧', color: 'var(--accent-amber)' },
-  Bash:       { icon: '⚡', color: 'var(--accent-teal)' },
-  WebSearch:  { icon: '🔍', color: 'var(--accent-cyan)' },
-  WebFetch:   { icon: '🌐', color: 'var(--accent-cyan)' },
-  Agent:      { icon: '🤖', color: 'var(--accent-purple)' },
-  Skill:      { icon: '⚙️', color: 'var(--accent-amber)' },
-  TaskCreate: { icon: '📋', color: 'var(--accent-teal)' },
-  TaskUpdate: { icon: '📋', color: 'var(--accent-teal)' },
-  TodoWrite:  { icon: '✅', color: 'var(--accent-teal)' },
+const TOOL_ICONS: Record<string, { icon: LucideIcon; color: string }> = {
+  Read:       { icon: FileText,       color: 'var(--accent-cyan)' },
+  Write:      { icon: FilePlus2,      color: 'var(--accent-purple)' },
+  Edit:       { icon: Pencil,         color: 'var(--accent-amber)' },
+  Bash:       { icon: Terminal,       color: 'var(--accent-teal)' },
+  WebSearch:  { icon: Search,         color: 'var(--accent-cyan)' },
+  WebFetch:   { icon: Globe,          color: 'var(--accent-cyan)' },
+  Agent:      { icon: Bot,            color: 'var(--accent-purple)' },
+  Skill:      { icon: SettingsIcon,   color: 'var(--accent-amber)' },
+  TaskCreate: { icon: ClipboardList,  color: 'var(--accent-teal)' },
+  TaskUpdate: { icon: ClipboardList,  color: 'var(--accent-teal)' },
+  TodoWrite:  { icon: CheckSquare,    color: 'var(--accent-teal)' },
 };
 
 function getToolMeta(name: string) {
-  return TOOL_ICONS[name] ?? { icon: '🔩', color: 'var(--accent-teal)' };
+  return TOOL_ICONS[name] ?? { icon: Wrench, color: 'var(--accent-teal)' };
 }
 
 function getToolSummary(name: string, input: unknown): string | null {
@@ -193,7 +207,7 @@ function ToolUseBlockView({ block }: { block: ContentBlock & { block_type: 'tool
         >
           <polyline points="9 18 15 12 9 6" />
         </svg>
-        <span className="text-sm shrink-0">{meta.icon}</span>
+        <meta.icon size={14} className="shrink-0" style={{ color: meta.color }} strokeWidth={2} />
         <span className="text-[11px] font-semibold shrink-0" style={{ color: meta.color }}>
           {block.tool_name}
         </span>
