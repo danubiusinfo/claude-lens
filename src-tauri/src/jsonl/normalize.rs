@@ -393,6 +393,7 @@ fn extract_content_blocks(content: &serde_json::Value) -> Vec<ContentBlock> {
 pub fn extract_session_messages(entries: &[RawSessionEntry], pricing: &[ModelPricing]) -> Vec<SessionMessage> {
     struct PendingAssistantTurn {
         timestamp: Option<String>,
+        end_timestamp: Option<String>,
         model: Option<String>,
         content_blocks: Vec<ContentBlock>,
         input_tokens: i64,
@@ -444,6 +445,7 @@ pub fn extract_session_messages(entries: &[RawSessionEntry], pricing: &[ModelPri
                 messages.push((u.timestamp.clone(), SessionMessage {
                     role: "user".to_string(),
                     timestamp: u.timestamp.clone(),
+                    end_timestamp: u.timestamp.clone(),
                     content_text,
                     content_blocks,
                     metadata: Some(MessageMetadata {
@@ -503,6 +505,9 @@ pub fn extract_session_messages(entries: &[RawSessionEntry], pricing: &[ModelPri
                         if turn.timestamp.is_none() || a.timestamp < turn.timestamp {
                             turn.timestamp = a.timestamp.clone();
                         }
+                        if turn.end_timestamp.is_none() || a.timestamp > turn.end_timestamp {
+                            turn.end_timestamp = a.timestamp.clone();
+                        }
                         continue;
                     }
                 }
@@ -514,6 +519,7 @@ pub fn extract_session_messages(entries: &[RawSessionEntry], pricing: &[ModelPri
                 }
                 assistant_turns.push((a.request_id.clone(), PendingAssistantTurn {
                     timestamp: a.timestamp.clone(),
+                    end_timestamp: a.timestamp.clone(),
                     model,
                     content_blocks: blocks,
                     input_tokens: input,
@@ -562,6 +568,7 @@ pub fn extract_session_messages(entries: &[RawSessionEntry], pricing: &[ModelPri
         messages.push((turn.timestamp.clone(), SessionMessage {
             role: "assistant".to_string(),
             timestamp: turn.timestamp,
+            end_timestamp: turn.end_timestamp,
             content_text,
             content_blocks: turn.content_blocks,
             metadata: Some(MessageMetadata {
@@ -728,5 +735,27 @@ mod tests {
         assert_eq!(meta.git_branch, Some("feature".to_string()));
         assert_eq!(meta.version, Some("2.1.74".to_string()));
         assert!(meta.is_sidechain);
+    }
+
+    #[test]
+    fn assistant_end_timestamp_is_latest_of_merged_entries() {
+        // Two assistant entries sharing a request_id, with the second arriving
+        // later — the merged SessionMessage should record the earliest as
+        // `timestamp` and the latest as `end_timestamp`.
+        let lines = [
+            r#"{"type":"user","message":{"role":"user","content":"hi"},"timestamp":"2026-05-04T10:00:00.000Z","sessionId":"s1"}"#,
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"first chunk"}],"usage":{"input_tokens":1,"output_tokens":1}},"timestamp":"2026-05-04T10:00:05.000Z","requestId":"req-A","sessionId":"s1"}"#,
+            r#"{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"second chunk"}],"usage":{"input_tokens":1,"output_tokens":2}},"timestamp":"2026-05-04T10:00:42.000Z","requestId":"req-A","sessionId":"s1"}"#,
+        ];
+        let entries: Vec<crate::jsonl::types::RawSessionEntry> = lines
+            .iter()
+            .map(|l| serde_json::from_str(l).unwrap())
+            .collect();
+        let msgs = extract_session_messages(&entries, &[]);
+        // Expect: 1 user + 1 merged assistant
+        assert_eq!(msgs.len(), 2);
+        let asst = msgs.iter().find(|m| m.role == "assistant").unwrap();
+        assert_eq!(asst.timestamp.as_deref(), Some("2026-05-04T10:00:05.000Z"));
+        assert_eq!(asst.end_timestamp.as_deref(), Some("2026-05-04T10:00:42.000Z"));
     }
 }

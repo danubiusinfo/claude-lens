@@ -201,6 +201,7 @@ mod tests {
         SessionMessage {
             role: role.to_string(),
             timestamp: Some(ts.to_string()),
+            end_timestamp: Some(ts.to_string()),
             content_text: None,
             content_blocks: Vec::new(),
             metadata: Some(MessageMetadata {

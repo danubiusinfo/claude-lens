@@ -165,6 +165,7 @@ pub struct MessageMetadata {
 pub struct SessionMessage {
     pub role: String,
     pub timestamp: Option<String>,
+    pub end_timestamp: Option<String>,
     pub content_text: Option<String>,
     pub content_blocks: Vec<ContentBlock>,
     pub metadata: Option<MessageMetadata>,
