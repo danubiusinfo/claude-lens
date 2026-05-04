@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback, memo, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, LayoutGroup } from 'motion/react';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { DayWorklogDialog } from './DayWorklogDialog';
 import type { DailyUsageRecord } from '../../types';
@@ -61,22 +62,42 @@ function getIntensity(value: number, maxValue: number): number {
   return Math.min(4, Math.ceil(ratio * 4)) as 1 | 2 | 3 | 4;
 }
 
+const LAYOUT_TRANSITION = { layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } };
+
 interface HeatmapCellProps {
   cell: CellData;
   intensityColors: (string | null)[];
+  isOpen: boolean;
   onHover: (e: React.MouseEvent, cell: CellData) => void;
   onLeave: () => void;
   onClick: (cell: CellData) => void;
 }
 
-const HeatmapCell = memo(function HeatmapCell({ cell, intensityColors, onHover, onLeave, onClick }: HeatmapCellProps) {
+const HeatmapCell = memo(function HeatmapCell({ cell, intensityColors, isOpen, onHover, onLeave, onClick }: HeatmapCellProps) {
   const bg = cell.isFuture ? undefined : intensityColors[cell.intensity] ?? undefined;
   const hasData = !cell.isFuture && cell.record !== null;
 
+  if (isOpen) {
+    return <div style={{ width: 12, height: 12 }} className="invisible" />;
+  }
+
+  if (!hasData) {
+    return (
+      <div
+        className={`rounded-sm transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
+        style={{ width: 12, height: 12, backgroundColor: bg, cursor: 'default' }}
+        onMouseEnter={(e) => onHover(e, cell)}
+        onMouseLeave={onLeave}
+      />
+    );
+  }
+
   return (
-    <div
-      className={`rounded-sm transition-colors ${!bg ? 'bg-[var(--heatmap-empty)]' : ''} ${cell.isToday ? 'heatmap-today' : ''}`}
-      style={{ width: 12, height: 12, backgroundColor: bg, cursor: hasData ? 'pointer' : 'default' }}
+    <motion.div
+      layoutId={`heatmap-cell-${cell.date}`}
+      transition={LAYOUT_TRANSITION}
+      className={`rounded-sm transition-colors ${cell.isToday ? 'heatmap-today' : ''}`}
+      style={{ width: 12, height: 12, backgroundColor: bg, cursor: 'pointer', borderRadius: 2 }}
       onMouseEnter={(e) => onHover(e, cell)}
       onMouseLeave={onLeave}
       onClick={() => onClick(cell)}
@@ -209,7 +230,7 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
   const numWeeks = Math.ceil(cells.length / 7);
 
   return (
-    <>
+    <LayoutGroup>
     <GlassCard>
       <h3 className="text-[13px] font-medium text-[var(--text-secondary)] mb-4">
         Activity
@@ -252,6 +273,7 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
                 key={cell.date}
                 cell={cell}
                 intensityColors={intensityColors}
+                isOpen={openDay === cell.date}
                 onHover={handleCellHover}
                 onLeave={handleCellLeave}
                 onClick={handleCellClick}
@@ -306,6 +328,6 @@ export function DailyHeatmap({ data, loading }: DailyHeatmapProps) {
         </div>,
         document.body,
       )}
-    </>
+    </LayoutGroup>
   );
 }
