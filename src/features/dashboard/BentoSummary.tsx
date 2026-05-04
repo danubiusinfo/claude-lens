@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import type { DashboardSummary, TimeseriesPoint, TimeRange } from '../../types';
 import { SparklineArea } from '../../components/ui/SparklineArea';
-import { ExpandedWidgetChart } from './ExpandedWidgetChart';
+import { ExpandedWidgetDialog } from './ExpandedWidgetDialog';
 import { useDashboardWorklog } from '../../hooks/useDashboardWorklog';
 import { WorklogBentoCard } from './WorklogBentoCard';
 
@@ -233,10 +233,9 @@ export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryPr
                   }}
                   transition={LAYOUT_TRANSITION}
                 >
-                  <ExpandedWidgetChart
+                  <ExpandedWidgetDialog
                     widgetType={selectedWidget}
-                    data={filled}
-                    worklogData={worklog}
+                    dashboardRange={range}
                     onClose={() => setSelectedWidget(null)}
                   />
                 </motion.div>

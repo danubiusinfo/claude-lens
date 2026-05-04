@@ -12,11 +12,12 @@ import {
 import type { TimeseriesPoint, WorklogSummary } from '../../types';
 import { useChartColors } from '../../hooks/useChartColors';
 
+export type WidgetType = 'tokens' | 'cost' | 'worklog';
+
 interface ExpandedWidgetChartProps {
-  widgetType: 'tokens' | 'cost' | 'worklog';
+  widgetType: WidgetType;
   data: TimeseriesPoint[];
   worklogData?: WorklogSummary | null;
-  onClose: () => void;
 }
 
 function formatTokens(n: number): string {
@@ -37,7 +38,6 @@ function formatDate(dateStr: string): string {
 
 const WIDGET_CONFIG = {
   tokens: {
-    title: 'Tokens',
     areas: [
       { dataKey: 'input', color: '#22d3ee', label: 'Input' },
       { dataKey: 'output', color: '#06b6d4', label: 'Output' },
@@ -47,7 +47,6 @@ const WIDGET_CONFIG = {
       `In: ${formatTokens(d.input)}  ·  Out: ${formatTokens(d.output)}`,
   },
   cost: {
-    title: 'Total Cost',
     areas: [
       { dataKey: 'cost', color: '#a78bfa', label: 'Cost' },
     ],
@@ -56,109 +55,9 @@ const WIDGET_CONFIG = {
   },
 } as const;
 
-export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: ExpandedWidgetChartProps) {
+export function ExpandedWidgetChart({ widgetType, data, worklogData }: ExpandedWidgetChartProps) {
   const colors = useChartColors();
-
   const chartData = useMemo(() => data, [data]);
-
-  // Worklog chart rendered separately
-  if (widgetType === 'worklog') {
-    const worklogSeries = (worklogData?.timeseries ?? []).map((p) => ({
-      day: p.day,
-      claude: Math.round(p.claude_seconds / 60),
-    }));
-
-    const tooltipStyle = {
-      backgroundColor: colors.tooltipBg,
-      backdropFilter: 'blur(40px) saturate(180%)',
-      border: `1px solid ${colors.tooltipBorder}`,
-      borderRadius: '12px',
-      fontSize: '12px',
-      color: colors.tooltipText,
-      boxShadow: colors.tooltipShadow,
-    };
-
-    const formatMinutes = (v: number) => {
-      const h = Math.floor(v / 60);
-      const m = v % 60;
-      return h > 0 ? `${h}h ${m}m` : `${m}m`;
-    };
-
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-[var(--text-secondary)]">
-            ⏱ Worklog
-          </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onClose(); }}
-            className="w-7 h-7 flex items-center justify-center rounded-full
-                       hover:bg-white/10 transition-colors text-[var(--text-secondary)]
-                       hover:text-[var(--text-primary)]"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M1 1l12 12M13 1L1 13" />
-            </svg>
-          </button>
-        </div>
-
-        <motion.div
-          className="flex-1 min-h-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.25, duration: 0.3 }}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={worklogSeries} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-              <defs>
-                <linearGradient id="grad-claude" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="day"
-                tickFormatter={(d: string) => formatDate(d)}
-                stroke={colors.axis}
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tickFormatter={formatMinutes}
-                stroke={colors.axis}
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-                width={50}
-              />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                labelFormatter={(label) => formatDate(String(label))}
-                formatter={(value) => [
-                  formatMinutes(typeof value === 'number' ? value : 0),
-                  'Claude',
-                ]}
-                cursor={{ stroke: colors.axis, strokeDasharray: '3 3' }}
-              />
-              <Area
-                type="monotone"
-                dataKey="claude"
-                stroke="#a855f7"
-                strokeWidth={2}
-                fill="url(#grad-claude)"
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: '#a855f7', fill: 'var(--bg-primary)' }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </div>
-    );
-  }
-
-  const config = WIDGET_CONFIG[widgetType];
 
   const tooltipStyle = {
     backgroundColor: colors.tooltipBg,
@@ -170,24 +69,19 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: 
     boxShadow: colors.tooltipShadow,
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-[var(--text-secondary)]">
-          {config.title}
-        </span>
-        <button
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="w-7 h-7 flex items-center justify-center rounded-full
-                     hover:bg-white/10 transition-colors text-[var(--text-secondary)]
-                     hover:text-[var(--text-primary)]"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M1 1l12 12M13 1L1 13" />
-          </svg>
-        </button>
-      </div>
+  if (widgetType === 'worklog') {
+    const worklogSeries = (worklogData?.timeseries ?? []).map((p) => ({
+      day: p.day,
+      claude: Math.round(p.claude_seconds / 60),
+    }));
 
+    const formatMinutes = (v: number) => {
+      const h = Math.floor(v / 60);
+      const m = v % 60;
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    };
+
+    return (
       <motion.div
         className="flex-1 min-h-0"
         initial={{ opacity: 0 }}
@@ -195,26 +89,24 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: 
         transition={{ delay: 0.25, duration: 0.3 }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+          <AreaChart data={worklogSeries} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <defs>
-              {config.areas.map(area => (
-                <linearGradient key={area.dataKey} id={`grad-${area.dataKey}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={area.color} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={area.color} stopOpacity={0.02} />
-                </linearGradient>
-              ))}
+              <linearGradient id="grad-claude" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
+              </linearGradient>
             </defs>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis
-              dataKey="date"
-              tickFormatter={formatDate}
+              dataKey="day"
+              tickFormatter={(d: string) => formatDate(d)}
               stroke={colors.axis}
               fontSize={10}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tickFormatter={config.yFormatter}
+              tickFormatter={formatMinutes}
               stroke={colors.axis}
               fontSize={10}
               tickLine={false}
@@ -224,27 +116,86 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData, onClose }: 
             <Tooltip
               contentStyle={tooltipStyle}
               labelFormatter={(label) => formatDate(String(label))}
-              formatter={(_value, _name, props) => {
-                const d = props.payload;
-                return [config.tooltipFormatter(d), ''];
-              }}
+              formatter={(value) => [
+                formatMinutes(typeof value === 'number' ? value : 0),
+                'Claude',
+              ]}
               cursor={{ stroke: colors.axis, strokeDasharray: '3 3' }}
             />
-            {config.areas.map(area => (
-              <Area
-                key={area.dataKey}
-                type="monotone"
-                dataKey={area.dataKey}
-                stroke={area.color}
-                strokeWidth={2}
-                fill={`url(#grad-${area.dataKey})`}
-                dot={false}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: area.color, fill: 'var(--bg-primary)' }}
-              />
-            ))}
+            <Area
+              type="monotone"
+              dataKey="claude"
+              stroke="#a855f7"
+              strokeWidth={2}
+              fill="url(#grad-claude)"
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: '#a855f7', fill: 'var(--bg-primary)' }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </motion.div>
-    </div>
+    );
+  }
+
+  const config = WIDGET_CONFIG[widgetType];
+
+  return (
+    <motion.div
+      className="flex-1 min-h-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.25, duration: 0.3 }}
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+          <defs>
+            {config.areas.map(area => (
+              <linearGradient key={area.dataKey} id={`grad-${area.dataKey}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={area.color} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={area.color} stopOpacity={0.02} />
+              </linearGradient>
+            ))}
+          </defs>
+          <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatDate}
+            stroke={colors.axis}
+            fontSize={10}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            tickFormatter={config.yFormatter}
+            stroke={colors.axis}
+            fontSize={10}
+            tickLine={false}
+            axisLine={false}
+            width={50}
+          />
+          <Tooltip
+            contentStyle={tooltipStyle}
+            labelFormatter={(label) => formatDate(String(label))}
+            formatter={(_value, _name, props) => {
+              const d = props.payload;
+              return [config.tooltipFormatter(d), ''];
+            }}
+            cursor={{ stroke: colors.axis, strokeDasharray: '3 3' }}
+          />
+          {config.areas.map(area => (
+            <Area
+              key={area.dataKey}
+              type="monotone"
+              dataKey={area.dataKey}
+              stroke={area.color}
+              strokeWidth={2}
+              fill={`url(#grad-${area.dataKey})`}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: area.color, fill: 'var(--bg-primary)' }}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    </motion.div>
   );
 }
