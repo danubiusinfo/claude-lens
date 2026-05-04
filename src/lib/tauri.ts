@@ -3,6 +3,7 @@ import type {
   AppStatusResponse,
   DailyUsageRecord,
   DashboardSummary,
+  DayWorklogProject,
   ImportResult,
   ModelPricing,
   PlanEntry,
@@ -12,7 +13,9 @@ import type {
   SourceStatusInfo,
   TimeRange,
   TimeseriesPoint,
+  TurnWorklog,
   UserProfile,
+  WorklogSummary,
 } from '../types';
 
 export async function getUserProfile(): Promise<UserProfile> {
@@ -157,5 +160,41 @@ export async function updateModelPricing(
 
 export async function resetModelPricing(): Promise<ModelPricing[]> {
   return invoke('reset_model_pricing');
+}
+
+// ── Worklog Commands ──────────────────────────────────────────
+
+export async function getSessionWorklog(sessionId: string): Promise<WorklogSummary> {
+  return invoke<WorklogSummary>('get_session_worklog', { sessionId });
+}
+
+export async function getSessionWorklogTurns(sessionId: string): Promise<TurnWorklog[]> {
+  return invoke<TurnWorklog[]>('get_session_worklog_turns', { sessionId });
+}
+
+export async function getDashboardWorklog(range: TimeRange): Promise<WorklogSummary> {
+  return invoke<WorklogSummary>('get_dashboard_worklog', { range });
+}
+
+export async function getDayWorklogByProject(day: string): Promise<DayWorklogProject[]> {
+  return invoke<DayWorklogProject[]>('get_day_worklog_by_project', { day });
+}
+
+export async function listSessionWorklogs(
+  sessionIds: string[],
+): Promise<Record<string, WorklogSummary>> {
+  return invoke<Record<string, WorklogSummary>>('list_session_worklogs', { sessionIds });
+}
+
+export async function recomputeWorklogs(): Promise<void> {
+  await invoke<void>('recompute_worklogs');
+}
+
+export async function getIdleThresholdMinutes(): Promise<number> {
+  return invoke<number>('get_idle_threshold_minutes');
+}
+
+export async function updateIdleThresholdMinutes(minutes: number): Promise<void> {
+  await invoke<void>('update_idle_threshold_minutes', { minutes });
 }
 

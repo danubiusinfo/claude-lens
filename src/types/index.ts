@@ -157,3 +157,35 @@ export interface SourceStatusInfo {
   source_file_count: number;
   total_jsonl_sessions: number;
 }
+
+// ── Worklog Types ────────────────────────────────────────────
+
+export interface WorklogTimeseriesPoint {
+  day: string;
+  user_seconds: number;
+  claude_seconds: number;
+}
+
+export interface WorklogSummary {
+  total_user_seconds: number;
+  total_claude_seconds: number;
+  turn_count: number;
+  session_count: number;
+  timeseries: WorklogTimeseriesPoint[];
+}
+
+export interface TurnWorklog {
+  index: number;
+  user_message_at: string;
+  last_assistant_at: string;
+  user_seconds: number;
+  claude_seconds: number;
+  user_capped: boolean;
+}
+
+export interface DayWorklogProject {
+  project_path: string | null;
+  session_count: number;
+  user_work_seconds: number;
+  claude_work_seconds: number;
+}
