@@ -126,9 +126,11 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
             let search_content = if search_text.is_empty() { None } else { Some(search_text) };
 
             if let Some(enriched) = normalize_session_file(&session_entries, fallback_id, &pricing) {
-                // Upsert session with full token/cost data
-                match db.get_session_by_source_id(&enriched.session_id) {
+                // Upsert session with full token/cost data; capture the DB UUID so worklog rows
+                // key on the same ID that the frontend's SessionRecord.id holds.
+                let db_session_id: String = match db.get_session_by_source_id(&enriched.session_id) {
                     Ok(Some(existing)) => {
+                        let db_id = existing.id.clone();
                         let updated = SessionRecord {
                             id: existing.id.clone(),
                             source_session_id: Some(enriched.session_id.clone()),
@@ -173,12 +175,13 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                             );
                         }
                         sessions_updated += 1;
+                        db_id
                     }
                     _ => {
                         // New session from per-session JSONL
                         let new_id = uuid::Uuid::new_v4().to_string();
                         let session = SessionRecord {
-                            id: new_id,
+                            id: new_id.clone(),
                             source_session_id: Some(enriched.session_id.clone()),
                             first_seen_at: enriched.first_seen_at.clone(),
                             last_seen_at: enriched.last_seen_at.clone(),
@@ -209,10 +212,12 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                             );
                         }
                         sessions_created += 1;
+                        new_id
                     }
-                }
+                };
 
-                // Compute worklog rows from the same message list
+                // Compute worklog rows from the same message list, keyed on the DB UUID
+                // so that frontend queries (which use SessionRecord.id) resolve correctly.
                 let messages = extract_session_messages(&session_entries, &pricing);
                 let idle_threshold = db.get_idle_threshold_seconds().unwrap_or(300);
                 let project_path_str = enriched.project_path.as_deref();
@@ -220,11 +225,11 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                     &messages,
                     idle_threshold,
                     project_path_str,
-                    &enriched.session_id,
+                    &db_session_id,
                 );
 
                 // Replace existing worklog rows for this session (so re-imports stay correct)
-                db.delete_worklogs_for_session(&enriched.session_id).ok();
+                db.delete_worklogs_for_session(&db_session_id).ok();
                 for row in &worklog_rows {
                     if let Err(e) = db.upsert_worklog(row) {
                         tracing::warn!("failed to upsert worklog row: {}", e);

@@ -128,14 +128,16 @@ pub async fn recompute_worklogs(
     state: State<'_, AppState>,
 ) -> Result<(), AppError> {
     let db = state.database().clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        db.delete_all_worklogs().ok();
-        if let Err(e) = crate::jsonl::import::run_import(&db, true) {
-            tracing::error!("recompute_worklogs failed: {}", e);
-        }
+    let result: Result<(), String> = tauri::async_runtime::spawn_blocking(move || {
+        // Full re-import — re-derives worklogs for every session with the new threshold.
+        // Each session's worklog rows are replaced inside the import loop, so we don't
+        // pre-delete (which would leave the DB empty if the import then fails).
+        crate::jsonl::import::run_import(&db, true).map(|_| ())
     })
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
+
+    result.map_err(AppError::Database)?;
     events::frontend::emit_db_updated(&app);
     Ok(())
 }
