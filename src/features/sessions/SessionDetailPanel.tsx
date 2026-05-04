@@ -4,8 +4,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { CopyButton } from '../../components/ui/CopyButton';
+import { WorklogPair } from '../../components/ui/WorklogPair';
 import { getSessionMessages, toggleSessionBookmark, renameSession } from '../../lib/tauri';
 import { useTauriEvent } from '../../hooks/useTauriEvent';
+import { useSessionWorklog } from '../../hooks/useSessionWorklog';
+import { useSessionWorklogTurns } from '../../hooks/useSessionWorklogTurns';
 import type { SessionRecord, SessionMessage, ContentBlock } from '../../types';
 
 interface SessionDetailPanelProps {
@@ -422,6 +425,9 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
   const handleDbUpdate = useCallback(() => setDbRevision((r) => r + 1), []);
   useTauriEvent('db-updated', handleDbUpdate);
 
+  const { data: worklog } = useSessionWorklog(session?.id ?? null);
+  const { data: turns } = useSessionWorklogTurns(session?.id ?? null);
+
   const displayMessages = useMemo(() => messages.filter(shouldShowMessage), [messages]);
 
   // Reset expanded state when panel closes
@@ -719,6 +725,50 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
                   <span className="inline-block px-3 py-1 rounded-full bg-accent-cyan/10 text-accent-cyan text-sm font-medium">
                     {session.model_summary}
                   </span>
+                </div>
+              )}
+
+              {/* Worklog */}
+              {worklog && (worklog.total_user_seconds > 0 || worklog.total_claude_seconds > 0) && (
+                <div className="space-y-3">
+                  <div className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+                    Worklog
+                  </div>
+                  <div className="flex items-baseline gap-6">
+                    <WorklogPair
+                      userSeconds={worklog.total_user_seconds}
+                      claudeSeconds={worklog.total_claude_seconds}
+                      size="lg"
+                    />
+                    <div className="text-xs text-[var(--text-secondary)]">
+                      {worklog.turn_count} turn{worklog.turn_count === 1 ? '' : 's'}
+                    </div>
+                  </div>
+
+                  {turns.length > 0 && (
+                    <div className="max-h-64 overflow-y-auto rounded-lg border border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]">
+                      {turns.map((t) => (
+                        <div key={t.index} className="flex items-center justify-between px-3 py-2 text-xs">
+                          <span className="text-[var(--text-secondary)]">Turn {t.index}</span>
+                          <div className="flex items-center gap-3">
+                            <WorklogPair
+                              userSeconds={t.user_seconds}
+                              claudeSeconds={t.claude_seconds}
+                              size="sm"
+                            />
+                            {t.user_capped && (
+                              <span
+                                className="rounded bg-amber-500/15 text-amber-400 px-1.5 py-0.5 text-[10px]"
+                                title="User idle gap was capped at the configured threshold"
+                              >
+                                capped
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

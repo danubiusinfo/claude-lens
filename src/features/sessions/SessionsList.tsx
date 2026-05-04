@@ -1,4 +1,6 @@
 import { GlassCard } from '../../components/ui/GlassCard';
+import { useSessionWorklogs } from '../../hooks/useSessionWorklogs';
+import { WorklogPair } from '../../components/ui/WorklogPair';
 import type { SessionRecord } from '../../types';
 
 interface SessionsListProps {
@@ -65,6 +67,9 @@ export function SessionsList({
   onLoadMore,
   hasMore,
 }: SessionsListProps) {
+  const visibleIds = sessions.map((s) => s.id);
+  const { data: worklogs } = useSessionWorklogs(visibleIds);
+
   if (loading && sessions.length === 0) {
     return (
       <GlassCard>
@@ -152,6 +157,18 @@ export function SessionsList({
                 </span>
               )}
             </div>
+            {(() => {
+              const w = worklogs[session.id];
+              if (!w || (w.total_user_seconds === 0 && w.total_claude_seconds === 0)) return null;
+              return (
+                <WorklogPair
+                  userSeconds={w.total_user_seconds}
+                  claudeSeconds={w.total_claude_seconds}
+                  size="sm"
+                  className="mt-1"
+                />
+              );
+            })()}
           </button>
           </div>
         );
