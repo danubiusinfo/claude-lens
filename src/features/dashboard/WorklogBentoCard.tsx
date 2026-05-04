@@ -1,4 +1,3 @@
-import { Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { WorklogSummary } from '../../types';
 import { formatDuration } from '../../lib/duration';
@@ -21,9 +20,8 @@ export function WorklogBentoCard({ data, onClick, layoutId }: WorklogBentoCardPr
       style={{ borderRadius: 16 }}
       transition={{ layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } }}
     >
-      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-text-secondary relative z-10">
-        <Clock size={13} aria-hidden strokeWidth={2} />
-        Worklog
+      <span className="text-[11px] font-medium text-text-secondary relative z-10">
+        Working time
       </span>
       <div className="relative z-10">
         <div className="text-2xl font-bold tracking-tight text-accent-purple whitespace-nowrap counter-animate">
