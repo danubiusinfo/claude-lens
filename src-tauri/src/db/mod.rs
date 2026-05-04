@@ -55,6 +55,26 @@ impl Database {
         Ok(())
     }
 
+    pub fn get_app_state(&self, key: &str) -> Result<Option<String>, AppError> {
+        self.get_app_setting(key)
+    }
+
+    pub fn set_app_state(&self, key: &str, value: &str) -> Result<(), AppError> {
+        self.set_app_setting(key, value)
+    }
+
+    pub fn get_idle_threshold_seconds(&self) -> Result<i64, AppError> {
+        Ok(self
+            .get_app_state("idle_threshold_seconds")?
+            .and_then(|v| v.parse::<i64>().ok())
+            .unwrap_or(300))
+    }
+
+    pub fn set_idle_threshold_seconds(&self, seconds: i64) -> Result<(), AppError> {
+        let clamped = seconds.clamp(60, 3600);
+        self.set_app_state("idle_threshold_seconds", &clamped.to_string())
+    }
+
     // ── Sessions ────────────────────────────────────────────────
 
     const SESSION_COLUMNS: &str = "id, source_session_id, first_seen_at, last_seen_at,
