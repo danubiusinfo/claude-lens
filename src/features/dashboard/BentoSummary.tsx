@@ -6,6 +6,8 @@ import { SparklineArea } from '../../components/ui/SparklineArea';
 import { ExpandedWidgetDialog } from './ExpandedWidgetDialog';
 import { useDashboardWorklog } from '../../hooks/useDashboardWorklog';
 import { WorklogBentoCard } from './WorklogBentoCard';
+import { fillGaps } from './timeseriesFill';
+import { formatTokens, formatCost } from './format';
 
 type WidgetType = 'tokens' | 'cost' | 'worklog';
 
@@ -13,79 +15,6 @@ interface BentoSummaryProps {
   summary: DashboardSummary | null;
   tokenTimeseries: TimeseriesPoint[];
   range: TimeRange;
-}
-
-const ZERO_POINT: Omit<TimeseriesPoint, 'date'> = {
-  total: 0, input: 0, output: 0, cached: 0, reasoning: 0, cost: 0,
-};
-
-function toDateStr(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-function getDateRange(range: TimeRange): { start: Date; end: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  switch (range) {
-    case 'Today':
-      return { start: today, end: today };
-    case 'WorkWeek': {
-      const day = today.getDay();
-      const monday = new Date(today);
-      monday.setDate(today.getDate() - ((day + 6) % 7));
-      const friday = new Date(monday);
-      friday.setDate(monday.getDate() + 4);
-      return { start: monday, end: friday > today ? today : friday };
-    }
-    case 'Week': {
-      const start = new Date(today);
-      start.setDate(today.getDate() - 6);
-      return { start, end: today };
-    }
-    case 'Month': {
-      const start = new Date(today);
-      start.setDate(today.getDate() - 29);
-      return { start, end: today };
-    }
-    case 'All':
-    default:
-      return { start: today, end: today }; // fallback, won't fill for 'All'
-  }
-}
-
-function fillGaps(data: TimeseriesPoint[], range: TimeRange): TimeseriesPoint[] {
-  if (range === 'All' && data.length > 0) {
-    // For 'All', fill between first and last data point
-    const start = new Date(data[0].date + 'T00:00:00');
-    const end = new Date(data[data.length - 1].date + 'T00:00:00');
-    return fillBetween(data, start, end);
-  }
-  if (range === 'Today') return data;
-  const { start, end } = getDateRange(range);
-  return fillBetween(data, start, end);
-}
-
-function fillBetween(data: TimeseriesPoint[], start: Date, end: Date): TimeseriesPoint[] {
-  const lookup = new Map(data.map(p => [p.date, p]));
-  const result: TimeseriesPoint[] = [];
-  const cur = new Date(start);
-  while (cur <= end) {
-    const key = toDateStr(cur);
-    result.push(lookup.get(key) ?? { date: key, ...ZERO_POINT });
-    cur.setDate(cur.getDate() + 1);
-  }
-  return result;
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toString();
-}
-
-function formatCost(n: number): string {
-  if (n < 0.01 && n > 0) return '<$0.01';
-  return `$${n.toFixed(2)}`;
 }
 
 const GLOW_CLASS: Record<WidgetType, string> = {

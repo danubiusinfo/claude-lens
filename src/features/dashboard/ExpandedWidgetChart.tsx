@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { TimeseriesPoint, WorklogSummary } from '../../types';
 import { useChartColors } from '../../hooks/useChartColors';
+import { formatTokens, formatCost } from './format';
 
 export type WidgetType = 'tokens' | 'cost' | 'worklog';
 
@@ -18,17 +19,6 @@ interface ExpandedWidgetChartProps {
   widgetType: WidgetType;
   data: TimeseriesPoint[];
   worklogData?: WorklogSummary | null;
-}
-
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toString();
-}
-
-function formatCost(n: number): string {
-  if (n < 0.01 && n > 0) return '<$0.01';
-  return `$${n.toFixed(2)}`;
 }
 
 function formatDate(dateStr: string): string {
