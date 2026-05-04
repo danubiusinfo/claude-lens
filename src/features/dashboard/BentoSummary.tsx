@@ -4,8 +4,10 @@ import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import type { DashboardSummary, TimeseriesPoint, TimeRange } from '../../types';
 import { SparklineArea } from '../../components/ui/SparklineArea';
 import { ExpandedWidgetChart } from './ExpandedWidgetChart';
+import { useDashboardWorklog } from '../../hooks/useDashboardWorklog';
+import { WorklogBentoCard } from './WorklogBentoCard';
 
-type WidgetType = 'tokens' | 'cost';
+type WidgetType = 'tokens' | 'cost' | 'worklog';
 
 interface BentoSummaryProps {
   summary: DashboardSummary | null;
@@ -89,6 +91,7 @@ function formatCost(n: number): string {
 const GLOW_CLASS: Record<WidgetType, string> = {
   tokens: 'glow-cyan',
   cost: 'glow-purple',
+  worklog: 'glow-green',
 };
 
 const LAYOUT_TRANSITION = { layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const } };
@@ -96,6 +99,7 @@ const LAYOUT_TRANSITION = { layout: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as c
 export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryProps) {
   const [selectedWidget, setSelectedWidget] = useState<WidgetType | null>(null);
 
+  const { data: worklog } = useDashboardWorklog(range);
   const filled = useMemo(() => fillGaps(tokenTimeseries, range), [tokenTimeseries, range]);
   const inputData = useMemo(() => filled.map(p => p.input), [filled]);
   const outputData = useMemo(() => filled.map(p => p.output), [filled]);
@@ -115,7 +119,7 @@ export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryPr
 
   return (
     <LayoutGroup>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {/* Total Tokens */}
         {selectedWidget === 'tokens' ? (
           <div className={`${cardBase} glow-cyan invisible`} />
@@ -187,6 +191,17 @@ export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryPr
             </div>
           </motion.div>
         )}
+
+        {/* Worklog */}
+        {selectedWidget === 'worklog' ? (
+          <div className={`${cardBase} glow-green invisible`} />
+        ) : (
+          <WorklogBentoCard
+            data={worklog}
+            layoutId="widget-worklog"
+            onClick={() => setSelectedWidget('worklog')}
+          />
+        )}
       </div>
 
       {/* Expanded overlay */}
@@ -220,6 +235,7 @@ export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryPr
                   <ExpandedWidgetChart
                     widgetType={selectedWidget}
                     data={filled}
+                    worklogData={worklog}
                     onClose={() => setSelectedWidget(null)}
                   />
                 </motion.div>
