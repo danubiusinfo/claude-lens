@@ -13,6 +13,7 @@ export default {
         accent: {
           cyan: "var(--accent-cyan)",
           purple: "var(--accent-purple)",
+          green: "var(--color-green)",
         },
         text: {
           primary: "var(--text-primary)",

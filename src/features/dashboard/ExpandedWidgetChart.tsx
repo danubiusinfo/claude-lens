@@ -80,8 +80,8 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData }: ExpandedW
           <AreaChart data={worklogSeries} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <defs>
               <linearGradient id="grad-claude" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#a855f7" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="var(--color-green)" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="var(--color-green)" stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
@@ -113,11 +113,11 @@ export function ExpandedWidgetChart({ widgetType, data, worklogData }: ExpandedW
             <Area
               type="monotone"
               dataKey="claude"
-              stroke="#a855f7"
+              stroke="var(--color-green)"
               strokeWidth={2}
               fill="url(#grad-claude)"
               dot={false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: '#a855f7', fill: 'var(--bg-primary)' }}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: 'var(--color-green)', fill: 'var(--bg-primary)' }}
             />
           </AreaChart>
         </ResponsiveContainer>
