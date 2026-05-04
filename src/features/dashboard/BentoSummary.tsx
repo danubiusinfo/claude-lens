@@ -116,6 +116,7 @@ export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryPr
   }, [selectedWidget]);
 
   const cardBase = 'glass-card p-4 flex flex-col justify-between relative overflow-hidden';
+  const cardBaseTop = 'glass-card p-4 flex flex-col gap-1 relative overflow-hidden';
 
   return (
     <LayoutGroup>
@@ -171,12 +172,12 @@ export function BentoSummary({ summary, tokenTimeseries, range }: BentoSummaryPr
 
         {/* Total Cost */}
         {selectedWidget === 'cost' ? (
-          <div className={`${cardBase} glow-purple invisible`} />
+          <div className={`${cardBaseTop} glow-purple invisible`} />
         ) : (
           <motion.div
             layoutId="widget-cost"
             onClick={() => setSelectedWidget('cost')}
-            className={`${cardBase} glow-purple cursor-pointer`}
+            className={`${cardBaseTop} glow-purple cursor-pointer`}
             style={{ borderRadius: 16 }}
             transition={LAYOUT_TRANSITION}
           >
