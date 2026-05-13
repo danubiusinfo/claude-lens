@@ -1025,7 +1025,7 @@ impl Database {
     pub fn get_model_pricing(&self) -> Result<Vec<ModelPricing>, AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let mut stmt = conn.prepare(
-            "SELECT model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million
+            "SELECT model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit
              FROM model_pricing ORDER BY model_key ASC",
         )?;
         let rows = stmt
@@ -1037,6 +1037,7 @@ impl Database {
                     output_per_million: row.get(3)?,
                     cache_read_per_million: row.get(4)?,
                     cache_write_per_million: row.get(5)?,
+                    context_limit: row.get(6)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -1050,13 +1051,14 @@ impl Database {
         output_per_million: f64,
         cache_read_per_million: f64,
         cache_write_per_million: f64,
+        context_limit: i64,
     ) -> Result<(), AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE model_pricing SET input_per_million = ?1, output_per_million = ?2,
-                cache_read_per_million = ?3, cache_write_per_million = ?4, updated_at = ?5 WHERE model_key = ?6",
-            params![input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, now, model_key],
+                cache_read_per_million = ?3, cache_write_per_million = ?4, context_limit = ?5, updated_at = ?6 WHERE model_key = ?7",
+            params![input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit, now, model_key],
         )?;
         Ok(())
     }
@@ -1066,15 +1068,16 @@ impl Database {
         let now = chrono::Utc::now().to_rfc3339();
         for p in crate::models::pricing::default_pricing() {
             conn.execute(
-                "INSERT INTO model_pricing (model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                "INSERT INTO model_pricing (model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
                  ON CONFLICT(model_key) DO UPDATE SET
                     input_per_million = excluded.input_per_million,
                     output_per_million = excluded.output_per_million,
                     cache_read_per_million = excluded.cache_read_per_million,
                     cache_write_per_million = excluded.cache_write_per_million,
+                    context_limit = excluded.context_limit,
                     updated_at = excluded.updated_at",
-                params![p.model_key, p.display_name, p.input_per_million, p.output_per_million, p.cache_read_per_million, p.cache_write_per_million, now],
+                params![p.model_key, p.display_name, p.input_per_million, p.output_per_million, p.cache_read_per_million, p.cache_write_per_million, p.context_limit, now],
             )?;
         }
         drop(conn);
