@@ -3,12 +3,14 @@ import type { TimeRange } from '../types';
 import { useDashboard } from '../hooks/useDashboard';
 import { useHeatmap } from '../hooks/useHeatmap';
 import { BentoSummary } from '../features/dashboard/BentoSummary';
+import { ContextOverviewCard } from '../features/dashboard/ContextOverviewCard';
 import { DailyHeatmap } from '../features/dashboard/DailyHeatmap';
 import { ProjectList } from '../features/dashboard/ProjectList';
 import { TimeRangeSelector } from '../features/dashboard/TimeRangeSelector';
 import { SourceStatusBadge } from '../features/dashboard/SourceStatusBadge';
 import { GlassCard } from '../components/ui/GlassCard';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useDashboardContext } from '../hooks/useDashboardContext';
 
 const InputOutputChart = lazy(() => import('../features/dashboard/InputOutputChart'));
 
@@ -17,6 +19,7 @@ export function DashboardPage() {
   const { summary, tokenTimeseries, loading, error } =
     useDashboard(range);
   const heatmapData = useHeatmap('All');
+  const { summary: contextSummary } = useDashboardContext(range);
 
   const hasData = summary && (summary.session_count > 0 || summary.total_tokens > 0);
 
@@ -72,6 +75,11 @@ export function DashboardPage() {
         <>
           {/* Bento summary grid */}
           <BentoSummary summary={summary} tokenTimeseries={tokenTimeseries} range={range} />
+
+          {/* Context & Cache overview */}
+          {contextSummary && (
+            <ContextOverviewCard summary={contextSummary} />
+          )}
 
           {/* Heatmap */}
           {heatmapData.error && <ErrorBanner message={heatmapData.error} />}
