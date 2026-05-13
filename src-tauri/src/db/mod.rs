@@ -71,7 +71,7 @@ impl Database {
         total_cost_usd, event_count, tool_event_count, raw_metadata_json,
         primary_source_kind, source_confidence, import_first_seen_at,
         live_last_seen_at, project_path, display_text, bookmarked,
-        custom_name, search_content";
+        custom_name, search_content, peak_input_tokens";
 
     fn row_to_session(row: &rusqlite::Row<'_>) -> rusqlite::Result<SessionRecord> {
         let bookmarked_int: i64 = row.get(20)?;
@@ -99,6 +99,7 @@ impl Database {
             bookmarked: bookmarked_int != 0,
             custom_name: row.get(21)?,
             search_content: row.get(22)?,
+            peak_input_tokens: row.get(23)?,
         })
     }
 
@@ -110,8 +111,9 @@ impl Database {
                 total_cached_input_tokens, total_reasoning_tokens, total_tokens,
                 total_cost_usd, event_count, tool_event_count, raw_metadata_json,
                 primary_source_kind, source_confidence, import_first_seen_at,
-                live_last_seen_at, project_path, display_text, search_content)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
+                live_last_seen_at, project_path, display_text, search_content,
+                peak_input_tokens)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)
              ON CONFLICT(id) DO UPDATE SET
                 source_session_id = excluded.source_session_id,
                 last_seen_at = excluded.last_seen_at,
@@ -131,7 +133,8 @@ impl Database {
                 live_last_seen_at = excluded.live_last_seen_at,
                 project_path = excluded.project_path,
                 display_text = excluded.display_text,
-                search_content = COALESCE(excluded.search_content, sessions.search_content)",
+                search_content = COALESCE(excluded.search_content, sessions.search_content),
+                peak_input_tokens = MAX(sessions.peak_input_tokens, excluded.peak_input_tokens)",
             params![
                 session.id,
                 session.source_session_id,
@@ -154,6 +157,7 @@ impl Database {
                 session.project_path,
                 session.display_text,
                 session.search_content,
+                session.peak_input_tokens,
             ],
         )?;
         Ok(())
@@ -1061,6 +1065,43 @@ impl Database {
             params![input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit, now, model_key],
         )?;
         Ok(())
+    }
+
+    // ── Context Aggregation ──────────────────────────────────────
+
+    /// Get per-session token aggregation for the context monitor dashboard.
+    /// Returns (source_session_id, total_input_tokens, total_cached_input_tokens,
+    ///          peak_input_tokens, total_output_tokens, total_cost_usd, day)
+    pub fn get_context_aggregation(
+        &self,
+        from_date: &str,
+        to_date: &str,
+    ) -> Result<Vec<(String, i64, i64, i64, i64, f64, String)>, AppError> {
+        let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
+        let mut stmt = conn.prepare(
+            "SELECT source_session_id, total_input_tokens, total_cached_input_tokens,
+                    peak_input_tokens, total_output_tokens, total_cost_usd,
+                    SUBSTR(last_seen_at, 1, 10) as day
+             FROM sessions
+             WHERE last_seen_at >= ?1 AND first_seen_at <= ?2
+               AND total_input_tokens > 0
+               AND source_session_id IS NOT NULL
+             ORDER BY last_seen_at ASC",
+        )?;
+        let rows = stmt
+            .query_map(params![from_date, to_date], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, i64>(1)?,
+                    row.get::<_, i64>(2)?,
+                    row.get::<_, i64>(3)?,
+                    row.get::<_, i64>(4)?,
+                    row.get::<_, f64>(5)?,
+                    row.get::<_, String>(6)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
     }
 
     pub fn reset_model_pricing(&self) -> Result<Vec<ModelPricing>, AppError> {
