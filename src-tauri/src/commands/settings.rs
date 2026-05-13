@@ -25,6 +25,7 @@ pub async fn update_model_pricing(
     output_per_million: f64,
     cache_read_per_million: f64,
     cache_write_per_million: f64,
+    context_limit: i64,
 ) -> Result<(), AppError> {
     state.database().update_model_pricing(
         &model_key,
@@ -32,6 +33,7 @@ pub async fn update_model_pricing(
         output_per_million,
         cache_read_per_million,
         cache_write_per_million,
+        context_limit,
     )
 }
 
