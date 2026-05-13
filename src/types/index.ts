@@ -10,6 +10,7 @@ export interface ModelPricing {
   output_per_million: number;
   cache_read_per_million: number;
   cache_write_per_million: number;
+  context_limit: number;
 }
 
 export interface AppStatusResponse {
@@ -183,4 +184,48 @@ export interface DayWorklogProject {
   project_path: string | null;
   session_count: number;
   claude_work_seconds: number;
+}
+
+// ── Context Monitor Types ────────────────────────────────────
+
+export interface TurnContextPoint {
+  turn: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_creation_tokens: number;
+  is_compaction: boolean;
+}
+
+export interface SessionContextStats {
+  context_limit: number | null;
+  peak_input_tokens: number;
+  peak_fill_pct: number | null;
+  avg_fill_pct: number | null;
+  cache_hit_rate: number;
+  cache_savings_usd: number;
+  compaction_count: number;
+  turns: TurnContextPoint[];
+}
+
+export interface FillBucket {
+  label: string;
+  min_pct: number;
+  max_pct: number;
+  session_count: number;
+}
+
+export interface DailyContextPoint {
+  day: string;
+  value: number;
+}
+
+export interface DashboardContextSummary {
+  avg_peak_fill_pct: number | null;
+  avg_cache_hit_rate: number;
+  total_cache_savings_usd: number;
+  cache_savings_pct: number;
+  fill_distribution: FillBucket[];
+  daily_avg_fill: DailyContextPoint[];
+  daily_avg_cache_rate: DailyContextPoint[];
 }
