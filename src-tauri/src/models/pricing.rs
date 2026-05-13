@@ -8,6 +8,7 @@ pub struct ModelPricing {
     pub output_per_million: f64,
     pub cache_read_per_million: f64,
     pub cache_write_per_million: f64,
+    pub context_limit: i64,
 }
 
 /// Default pricing data seeded into the database on first run.
@@ -22,6 +23,7 @@ pub fn default_pricing() -> Vec<ModelPricing> {
             output_per_million: 25.0,
             cache_read_per_million: 0.50,
             cache_write_per_million: 6.25,
+            context_limit: 200_000,
         },
         ModelPricing {
             model_key: "sonnet".to_string(),
@@ -30,6 +32,7 @@ pub fn default_pricing() -> Vec<ModelPricing> {
             output_per_million: 15.0,
             cache_read_per_million: 0.30,
             cache_write_per_million: 3.75,
+            context_limit: 200_000,
         },
         ModelPricing {
             model_key: "haiku".to_string(),
@@ -38,6 +41,7 @@ pub fn default_pricing() -> Vec<ModelPricing> {
             output_per_million: 5.0,
             cache_read_per_million: 0.10,
             cache_write_per_million: 1.25,
+            context_limit: 200_000,
         },
     ]
 }
