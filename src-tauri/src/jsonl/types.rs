@@ -196,6 +196,7 @@ pub struct EnrichedSession {
     pub total_reasoning_tokens: i64,
     pub total_tokens: i64,
     pub total_cost_usd: f64,
+    pub peak_input_tokens: i64,
 }
 
 // ── Worklog types ────────────────────────────────────────────────────

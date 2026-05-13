@@ -167,6 +167,7 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                             bookmarked: existing.bookmarked,
                             custom_name: existing.custom_name,
                             search_content: search_content.clone().or(existing.search_content),
+                            peak_input_tokens: enriched.peak_input_tokens,
                         };
                         if let Err(e) = db.upsert_session(&updated) {
                             tracing::error!(
@@ -204,6 +205,7 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                             bookmarked: false,
                             custom_name: None,
                             search_content: search_content.clone(),
+                            peak_input_tokens: enriched.peak_input_tokens,
                         };
                         if let Err(e) = db.upsert_session(&session) {
                             tracing::error!(
@@ -427,6 +429,7 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                     bookmarked: existing.bookmarked,
                     custom_name: existing.custom_name,
                     search_content: existing.search_content,
+                    peak_input_tokens: existing.peak_input_tokens,
                 };
                 if let Err(e) = db.upsert_session(&updated) {
                     tracing::error!("Failed to update session from JSONL: {}", e);
@@ -466,6 +469,7 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                     bookmarked: false,
                     custom_name: None,
                     search_content: None,
+                    peak_input_tokens: 0,
                 };
                 if let Err(e) = db.upsert_session(&session) {
                     tracing::error!("Failed to create session from JSONL: {}", e);

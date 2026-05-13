@@ -250,10 +250,14 @@ pub fn normalize_session_file(
     let mut total_cached: i64 = 0;
     let mut total_tool_uses: i64 = 0;
     let mut total_cost: f64 = 0.0;
+    let mut peak_input: i64 = 0;
     let mut latest_model: Option<String> = None;
     let mut latest_model_ts: Option<&str> = None;
 
     for a in &deduped_assistants {
+        if a.input_tokens > peak_input {
+            peak_input = a.input_tokens;
+        }
         total_input += a.input_tokens;
         total_output += a.output_tokens;
         total_cached += a.cache_creation_tokens + a.cache_read_tokens;
@@ -340,6 +344,7 @@ pub fn normalize_session_file(
         total_reasoning_tokens: 0,
         total_tokens,
         total_cost_usd: total_cost,
+        peak_input_tokens: peak_input,
     })
 }
 

@@ -26,4 +26,5 @@ pub struct SessionRecord {
     pub custom_name: Option<String>,
     #[serde(skip_serializing)]
     pub search_content: Option<String>,
+    pub peak_input_tokens: i64,
 }
