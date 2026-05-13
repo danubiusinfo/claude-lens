@@ -1,3 +1,4 @@
+pub mod context;
 pub mod dashboard;
 pub mod jsonl;
 pub mod plans;
