@@ -70,7 +70,8 @@ export function SettingsPage() {
       p.input_per_million !== e.input_per_million ||
       p.output_per_million !== e.output_per_million ||
       p.cache_read_per_million !== e.cache_read_per_million ||
-      p.cache_write_per_million !== e.cache_write_per_million
+      p.cache_write_per_million !== e.cache_write_per_million ||
+      p.context_limit !== e.context_limit
     );
   });
 
@@ -84,7 +85,8 @@ export function SettingsPage() {
           orig.input_per_million !== edited.input_per_million ||
           orig.output_per_million !== edited.output_per_million ||
           orig.cache_read_per_million !== edited.cache_read_per_million ||
-          orig.cache_write_per_million !== edited.cache_write_per_million
+          orig.cache_write_per_million !== edited.cache_write_per_million ||
+          orig.context_limit !== edited.context_limit
         ) {
           await updateModelPricing(
             edited.model_key,
@@ -92,6 +94,7 @@ export function SettingsPage() {
             edited.output_per_million,
             edited.cache_read_per_million,
             edited.cache_write_per_million,
+            edited.context_limit,
           );
         }
       }
@@ -115,18 +118,14 @@ export function SettingsPage() {
     }
   };
 
-  const updateField = (
-    index: number,
-    field: 'input_per_million' | 'output_per_million' | 'cache_read_per_million' | 'cache_write_per_million',
-    value: string,
-  ) => {
-    const num = parseFloat(value);
-    if (isNaN(num) && value !== '') return;
-    setEditedPricing((prev) => {
-      const next = prev.map((p) => ({ ...p }));
-      next[index] = { ...next[index], [field]: value === '' ? 0 : num };
-      return next;
-    });
+  const updateField = (index: number, field: keyof ModelPricing, value: string) => {
+    setEditedPricing((prev) =>
+      prev.map((p, i) =>
+        i === index
+          ? { ...p, [field]: field === 'context_limit' ? parseInt(value, 10) || 0 : parseFloat(value) || 0 }
+          : p,
+      ),
+    );
   };
 
   const dismissClearConfirm = () => {
@@ -271,17 +270,18 @@ export function SettingsPage() {
         {editedPricing.length > 0 && (
           <div className="space-y-3">
             {/* Header */}
-            <div className="grid grid-cols-5 gap-2 text-[10px] text-text-secondary font-medium">
+            <div className="grid grid-cols-6 gap-2 text-[10px] text-text-secondary font-medium">
               <span>Model</span>
               <span>Input</span>
               <span>Output</span>
               <span>Cache Read</span>
               <span>Cache Write</span>
+              <span>Context Limit</span>
             </div>
 
             {/* Rows */}
             {editedPricing.map((p, i) => (
-              <div key={p.model_key} className="grid grid-cols-5 gap-2 items-center">
+              <div key={p.model_key} className="grid grid-cols-6 gap-2 items-center">
                 <span className="text-xs text-[var(--text-primary)]">{p.display_name}</span>
                 <input
                   type="number"
@@ -313,6 +313,14 @@ export function SettingsPage() {
                   min="0"
                   value={p.cache_write_per_million}
                   onChange={(e) => updateField(i, 'cache_write_per_million', e.target.value)}
+                  className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-full"
+                />
+                <input
+                  type="number"
+                  step="1000"
+                  min="0"
+                  value={p.context_limit}
+                  onChange={(e) => updateField(i, 'context_limit', e.target.value)}
                   className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-full"
                 />
               </div>
