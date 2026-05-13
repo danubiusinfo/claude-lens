@@ -130,9 +130,6 @@ export function ContextMonitor({ stats }: ContextMonitorProps) {
         <>
           {/* AreaChart */}
           <div className="rounded-lg bg-[var(--bg-primary)]/40 p-3">
-            <defs>
-              {/* SVG defs are inside the chart via recharts */}
-            </defs>
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart
                 data={turns}
@@ -263,7 +260,7 @@ export function ContextMonitor({ stats }: ContextMonitorProps) {
           </div>
 
           {/* Extended stat cards */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-5 gap-1.5">
             <div className="flex-1 text-center py-1.5 rounded-md bg-[var(--bg-primary)]/40">
               <div className="text-[10px] text-[var(--text-secondary)] leading-none mb-0.5">Peak fill</div>
               <div className="text-sm font-semibold text-accent-cyan">
