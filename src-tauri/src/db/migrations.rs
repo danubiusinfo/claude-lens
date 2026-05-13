@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use crate::error::AppError;
 
-const CURRENT_VERSION: i64 = 11;
+const CURRENT_VERSION: i64 = 12;
 
 const V1_UP: &str = r#"
 CREATE TABLE IF NOT EXISTS app_state (
@@ -249,6 +249,11 @@ CREATE INDEX IF NOT EXISTS idx_worklogs_project ON worklogs(project_path);
 DELETE FROM app_state WHERE key = 'idle_threshold_seconds';
 "#;
 
+const V12_UP: &str = r#"
+ALTER TABLE model_pricing ADD COLUMN context_limit INTEGER NOT NULL DEFAULT 200000;
+ALTER TABLE sessions ADD COLUMN peak_input_tokens INTEGER NOT NULL DEFAULT 0;
+"#;
+
 fn get_schema_version(conn: &Connection) -> Result<i64, AppError> {
     // Check if app_state table exists
     let table_exists: bool = conn.query_row(
@@ -351,6 +356,12 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         conn.execute_batch(V11_UP)?;
         set_schema_version(conn, 11)?;
         tracing::info!("Applied migration V11 (schema version 11) — drop user_work_seconds + idle_threshold setting");
+    }
+
+    if current < 12 {
+        conn.execute_batch(V12_UP)?;
+        set_schema_version(conn, 12)?;
+        tracing::info!("Applied migration V12 (schema version 12) — context_limit + peak_input_tokens");
     }
 
     let final_version = get_schema_version(conn)?;
