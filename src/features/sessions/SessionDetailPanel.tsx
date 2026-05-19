@@ -23,8 +23,6 @@ import { getSessionMessages, toggleSessionBookmark, renameSession } from '../../
 import { useTauriEvent } from '../../hooks/useTauriEvent';
 import { useSessionWorklog } from '../../hooks/useSessionWorklog';
 import { useSessionWorklogTurns } from '../../hooks/useSessionWorklogTurns';
-import { useSessionContext } from '../../hooks/useSessionContext';
-import { ContextMonitor } from './ContextMonitor';
 import type { SessionRecord, SessionMessage, ContentBlock } from '../../types';
 
 interface SessionDetailPanelProps {
@@ -443,8 +441,6 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
 
   const { data: worklog } = useSessionWorklog(session?.id ?? null);
   const { data: turns } = useSessionWorklogTurns(session?.id ?? null);
-  const { stats: contextStats } = useSessionContext(session?.source_session_id ?? null);
-
   const displayMessages = useMemo(() => messages.filter(shouldShowMessage), [messages]);
 
   // Reset expanded state when panel closes
@@ -775,10 +771,6 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
                     </div>
                   )}
                 </div>
-              )}
-
-              {contextStats && contextStats.turns.length > 0 && (
-                <ContextMonitor stats={contextStats} />
               )}
 
               {/* Messages */}

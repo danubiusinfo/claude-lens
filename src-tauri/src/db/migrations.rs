@@ -2,7 +2,7 @@ use rusqlite::Connection;
 
 use crate::error::AppError;
 
-const CURRENT_VERSION: i64 = 12;
+const CURRENT_VERSION: i64 = 13;
 
 const V1_UP: &str = r#"
 CREATE TABLE IF NOT EXISTS app_state (
@@ -254,6 +254,18 @@ ALTER TABLE model_pricing ADD COLUMN context_limit INTEGER NOT NULL DEFAULT 2000
 ALTER TABLE sessions ADD COLUMN peak_input_tokens INTEGER NOT NULL DEFAULT 0;
 "#;
 
+const V13_UP: &str = r#"
+DELETE FROM model_pricing;
+INSERT INTO model_pricing (model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, updated_at)
+VALUES
+    ('opus-4-7',   'Opus 4.7',   5.0,  25.0,  0.50, 6.25, datetime('now')),
+    ('opus-4-6',   'Opus 4.6',   5.0,  25.0,  0.50, 6.25, datetime('now')),
+    ('opus-4-5',   'Opus 4.5',   5.0,  25.0,  0.50, 6.25, datetime('now')),
+    ('sonnet-4-6', 'Sonnet 4.6', 3.0,  15.0,  0.30, 3.75, datetime('now')),
+    ('sonnet-4-5', 'Sonnet 4.5', 3.0,  15.0,  0.30, 3.75, datetime('now')),
+    ('haiku-4-5',  'Haiku 4.5',  1.0,  5.0,   0.10, 1.25, datetime('now'));
+"#;
+
 fn get_schema_version(conn: &Connection) -> Result<i64, AppError> {
     // Check if app_state table exists
     let table_exists: bool = conn.query_row(
@@ -362,6 +374,12 @@ pub fn run(conn: &Connection) -> Result<(), AppError> {
         conn.execute_batch(V12_UP)?;
         set_schema_version(conn, 12)?;
         tracing::info!("Applied migration V12 (schema version 12) — context_limit + peak_input_tokens");
+    }
+
+    if current < 13 {
+        conn.execute_batch(V13_UP)?;
+        set_schema_version(conn, 13)?;
+        tracing::info!("Applied migration V13 (schema version 13) — versioned model pricing");
     }
 
     let final_version = get_schema_version(conn)?;

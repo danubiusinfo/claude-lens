@@ -5,16 +5,23 @@ use crate::models::ModelPricing;
 fn rate_from_pricing(model: &str, token_type: &str, pricing: &[ModelPricing]) -> f64 {
     let model_lower = model.to_lowercase();
 
-    // Try to find a match in the DB pricing
+    // Try longest model_key first so "opus-4-7" matches before a hypothetical "opus"
+    let mut best: Option<&ModelPricing> = None;
     for p in pricing {
         if model_lower.contains(&p.model_key) {
-            return match token_type {
-                "cache_read" | "input_cache_read" => p.cache_read_per_million,
-                "cache_write" => p.cache_write_per_million,
-                "output" => p.output_per_million,
-                _ => p.input_per_million, // "input" and any unknown
-            };
+            if best.map_or(true, |b| p.model_key.len() > b.model_key.len()) {
+                best = Some(p);
+            }
         }
+    }
+
+    if let Some(p) = best {
+        return match token_type {
+            "cache_read" | "input_cache_read" => p.cache_read_per_million,
+            "cache_write" => p.cache_write_per_million,
+            "output" => p.output_per_million,
+            _ => p.input_per_million,
+        };
     }
 
     // Fallback to hardcoded defaults

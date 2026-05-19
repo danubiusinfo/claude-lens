@@ -128,9 +128,20 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
             if let Some(enriched) = normalize_session_file(&session_entries, fallback_id, &pricing) {
                 // Upsert session with full token/cost data; capture the DB UUID so worklog rows
                 // key on the same ID that the frontend's SessionRecord.id holds.
+                // Track old token values so we can compute deltas for daily_usage
+                let old_session_tokens: Option<(i64, i64, i64, i64, i64, f64, i64)>;
                 let db_session_id: String = match db.get_session_by_source_id(&enriched.session_id) {
                     Ok(Some(existing)) => {
                         let db_id = existing.id.clone();
+                        old_session_tokens = Some((
+                            existing.total_input_tokens,
+                            existing.total_output_tokens,
+                            existing.total_cached_input_tokens,
+                            existing.total_reasoning_tokens,
+                            existing.total_tokens,
+                            existing.total_cost_usd,
+                            existing.event_count,
+                        ));
                         let updated = SessionRecord {
                             id: existing.id.clone(),
                             source_session_id: Some(enriched.session_id.clone()),
@@ -180,6 +191,7 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                     }
                     _ => {
                         // New session from per-session JSONL
+                        old_session_tokens = None;
                         let new_id = uuid::Uuid::new_v4().to_string();
                         let session = SessionRecord {
                             id: new_id.clone(),
@@ -236,18 +248,41 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                     }
                 }
 
-                // Update daily aggregates with full token data
+                // Update daily aggregates with delta only (avoid double-counting on re-import)
                 let day = &enriched.first_seen_at[..10];
-                if enriched.total_tokens > 0 {
+                let (d_input, d_output, d_cached, d_reasoning, d_tokens, d_cost, d_events) =
+                    if let Some((oi, oo, oc, or_, ot, ocost, oe)) = old_session_tokens {
+                        (
+                            enriched.total_input_tokens - oi,
+                            enriched.total_output_tokens - oo,
+                            enriched.total_cached_input_tokens - oc,
+                            enriched.total_reasoning_tokens - or_,
+                            enriched.total_tokens - ot,
+                            enriched.total_cost_usd - ocost,
+                            enriched.event_count - oe,
+                        )
+                    } else {
+                        (
+                            enriched.total_input_tokens,
+                            enriched.total_output_tokens,
+                            enriched.total_cached_input_tokens,
+                            enriched.total_reasoning_tokens,
+                            enriched.total_tokens,
+                            enriched.total_cost_usd,
+                            enriched.event_count,
+                        )
+                    };
+
+                if d_tokens > 0 {
                     if let Err(e) = db.increment_daily_usage(
                         day,
-                        enriched.total_input_tokens,
-                        enriched.total_output_tokens,
-                        enriched.total_cached_input_tokens,
-                        enriched.total_reasoning_tokens,
-                        enriched.total_tokens,
-                        enriched.total_cost_usd,
-                        enriched.event_count,
+                        d_input,
+                        d_output,
+                        d_cached,
+                        d_reasoning,
+                        d_tokens,
+                        d_cost,
+                        d_events,
                         &now,
                     ) {
                         tracing::warn!(
@@ -255,7 +290,7 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                             e
                         );
                     }
-                } else {
+                } else if old_session_tokens.is_none() && enriched.total_tokens == 0 {
                     if let Err(e) =
                         db.increment_daily_usage_jsonl(day, 1, enriched.event_count, &now)
                     {
@@ -263,16 +298,18 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
                     }
                 }
 
-                // Update models_daily
+                // Update models_daily with delta
                 if let Some(ref model) = enriched.model_summary {
-                    if let Err(e) = db.increment_models_daily(
-                        day,
-                        model,
-                        enriched.total_tokens,
-                        enriched.total_cost_usd,
-                        enriched.event_count,
-                    ) {
-                        tracing::warn!("Failed to update models_daily from per-session JSONL: {}", e);
+                    if d_tokens > 0 {
+                        if let Err(e) = db.increment_models_daily(
+                            day,
+                            model,
+                            d_tokens,
+                            d_cost,
+                            d_events,
+                        ) {
+                            tracing::warn!("Failed to update models_daily from per-session JSONL: {}", e);
+                        }
                     }
                 }
 

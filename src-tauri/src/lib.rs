@@ -134,8 +134,6 @@ pub fn run() {
             commands::worklog::get_day_worklog_by_project,
             commands::worklog::list_session_worklogs,
             commands::worklog::recompute_worklogs,
-            commands::context::get_session_context_stats,
-            commands::context::get_dashboard_context_summary,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

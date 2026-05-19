@@ -2,14 +2,12 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AppStatusResponse,
   DailyUsageRecord,
-  DashboardContextSummary,
   DashboardSummary,
   DayWorklogProject,
   ImportResult,
   ModelPricing,
   PlanEntry,
   ProjectStats,
-  SessionContextStats,
   SessionMessage,
   SessionRecord,
   SourceStatusInfo,
@@ -150,7 +148,6 @@ export async function updateModelPricing(
   outputPerMillion: number,
   cacheReadPerMillion: number,
   cacheWritePerMillion: number,
-  contextLimit: number,
 ): Promise<void> {
   return invoke('update_model_pricing', {
     modelKey,
@@ -158,7 +155,6 @@ export async function updateModelPricing(
     outputPerMillion,
     cacheReadPerMillion,
     cacheWritePerMillion,
-    contextLimit,
   });
 }
 
@@ -194,17 +190,4 @@ export async function recomputeWorklogs(): Promise<void> {
   await invoke<void>('recompute_worklogs');
 }
 
-// ── Context Monitor Commands ──────────────────────────────────
-
-export async function getSessionContextStats(
-  sourceSessionId: string
-): Promise<SessionContextStats> {
-  return invoke<SessionContextStats>('get_session_context_stats', { sourceSessionId });
-}
-
-export async function getDashboardContextSummary(
-  range: TimeRange
-): Promise<DashboardContextSummary> {
-  return invoke<DashboardContextSummary>('get_dashboard_context_summary', { range });
-}
 

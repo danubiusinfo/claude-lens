@@ -1029,7 +1029,7 @@ impl Database {
     pub fn get_model_pricing(&self) -> Result<Vec<ModelPricing>, AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let mut stmt = conn.prepare(
-            "SELECT model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit
+            "SELECT model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million
              FROM model_pricing ORDER BY model_key ASC",
         )?;
         let rows = stmt
@@ -1041,7 +1041,6 @@ impl Database {
                     output_per_million: row.get(3)?,
                     cache_read_per_million: row.get(4)?,
                     cache_write_per_million: row.get(5)?,
-                    context_limit: row.get(6)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -1055,70 +1054,26 @@ impl Database {
         output_per_million: f64,
         cache_read_per_million: f64,
         cache_write_per_million: f64,
-        context_limit: i64,
     ) -> Result<(), AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE model_pricing SET input_per_million = ?1, output_per_million = ?2,
-                cache_read_per_million = ?3, cache_write_per_million = ?4, context_limit = ?5, updated_at = ?6 WHERE model_key = ?7",
-            params![input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit, now, model_key],
+                cache_read_per_million = ?3, cache_write_per_million = ?4, updated_at = ?5 WHERE model_key = ?6",
+            params![input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, now, model_key],
         )?;
         Ok(())
-    }
-
-    // ── Context Aggregation ──────────────────────────────────────
-
-    /// Get per-session token aggregation for the context monitor dashboard.
-    /// Returns (source_session_id, total_input_tokens, total_cached_input_tokens,
-    ///          peak_input_tokens, total_output_tokens, total_cost_usd, day)
-    pub fn get_context_aggregation(
-        &self,
-        from_date: &str,
-        to_date: &str,
-    ) -> Result<Vec<(String, i64, i64, i64, i64, f64, String)>, AppError> {
-        let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
-        let mut stmt = conn.prepare(
-            "SELECT source_session_id, total_input_tokens, total_cached_input_tokens,
-                    peak_input_tokens, total_output_tokens, total_cost_usd,
-                    SUBSTR(last_seen_at, 1, 10) as day
-             FROM sessions
-             WHERE last_seen_at >= ?1 AND first_seen_at <= ?2
-               AND total_input_tokens > 0
-               AND source_session_id IS NOT NULL
-             ORDER BY last_seen_at ASC",
-        )?;
-        let rows = stmt
-            .query_map(params![from_date, to_date], |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, i64>(1)?,
-                    row.get::<_, i64>(2)?,
-                    row.get::<_, i64>(3)?,
-                    row.get::<_, i64>(4)?,
-                    row.get::<_, f64>(5)?,
-                    row.get::<_, String>(6)?,
-                ))
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
     }
 
     pub fn reset_model_pricing(&self) -> Result<Vec<ModelPricing>, AppError> {
         let conn = self.conn.lock().map_err(|e| AppError::Database(e.to_string()))?;
         let now = chrono::Utc::now().to_rfc3339();
+        conn.execute("DELETE FROM model_pricing", [])?;
         for p in crate::models::pricing::default_pricing() {
             conn.execute(
-                "INSERT INTO model_pricing (model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, context_limit, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
-                 ON CONFLICT(model_key) DO UPDATE SET
-                    input_per_million = excluded.input_per_million,
-                    output_per_million = excluded.output_per_million,
-                    cache_read_per_million = excluded.cache_read_per_million,
-                    cache_write_per_million = excluded.cache_write_per_million,
-                    context_limit = excluded.context_limit,
-                    updated_at = excluded.updated_at",
-                params![p.model_key, p.display_name, p.input_per_million, p.output_per_million, p.cache_read_per_million, p.cache_write_per_million, p.context_limit, now],
+                "INSERT INTO model_pricing (model_key, display_name, input_per_million, output_per_million, cache_read_per_million, cache_write_per_million, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![p.model_key, p.display_name, p.input_per_million, p.output_per_million, p.cache_read_per_million, p.cache_write_per_million, now],
             )?;
         }
         drop(conn);
