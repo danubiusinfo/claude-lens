@@ -167,125 +167,162 @@ export function SettingsPage() {
       <h1 className="text-xl font-semibold text-text-primary tracking-tight">Settings</h1>
 
       <GlassCard>
-        <h2 className="text-sm font-medium text-text-primary mb-3">Appearance</h2>
-        <div className="flex gap-1 p-[3px] rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)] w-fit">
-          {THEME_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setTheme(opt.value)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 flex items-center gap-1.5 ${
-                themeMode === opt.value
-                  ? 'bg-[var(--accent-cyan)]/15 text-[var(--accent-cyan)] shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <span>{opt.icon}</span>
-              {opt.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent-amber/10 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-accent-amber" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            </div>
+            <h2 className="text-sm font-medium text-text-primary">Appearance</h2>
+          </div>
+          <div className="flex gap-1 p-[3px] rounded-full border border-[var(--border-subtle)] bg-[var(--bg-card)]">
+            {THEME_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setTheme(opt.value)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 flex items-center gap-1.5 ${
+                  themeMode === opt.value
+                    ? 'bg-accent-amber/15 text-accent-amber shadow-sm'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <span>{opt.icon}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </GlassCard>
 
       <GlassCard>
-        <h2 className="text-sm font-medium text-text-primary mb-3">
-          Database Location
-        </h2>
-        <p className="text-xs text-text-secondary mb-2">
-          All telemetry and imported session data is stored locally in a SQLite database:
-        </p>
-        <code className="block text-xs font-mono text-accent-cyan bg-[var(--input-bg)] rounded-md px-3 py-2">
-          ~/Library/Application Support/com.claudelens.app/claudelens.db
-        </code>
-      </GlassCard>
-
-      <GlassCard>
-        <h2 className="text-sm font-medium text-text-primary mb-3">
-          JSONL Source
-        </h2>
-        <div className="space-y-2 text-xs text-text-secondary">
-          <div className="flex justify-between">
-            <span>Source files</span>
-            <span className="text-[var(--text-primary)]">
-              {sourceStatus?.source_file_count ?? '...'}
-            </span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-accent-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+              </svg>
+            </div>
+            <h2 className="text-sm font-medium text-text-primary">Data source</h2>
           </div>
-          <div className="flex justify-between">
-            <span>Imported sessions</span>
-            <span className="text-[var(--text-primary)]">
-              {sourceStatus?.jsonl.total_sessions ?? '...'}
-            </span>
+          <button
+            onClick={handleReimport}
+            disabled={reimporting}
+            className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
+              bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20
+              hover:bg-accent-cyan/20
+              disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {reimporting ? 'Re-importing...' : 'Full Re-import'}
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] p-3">
+            <div className="text-[10px] text-text-secondary mb-1">Source files</div>
+            <div className="text-lg font-semibold text-[var(--text-primary)] tabular-nums">
+              {sourceStatus?.source_file_count ?? '—'}
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span>Last import</span>
-            <span className="text-[var(--text-primary)]">
+          <div className="rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] p-3">
+            <div className="text-[10px] text-text-secondary mb-1">Sessions</div>
+            <div className="text-lg font-semibold text-[var(--text-primary)] tabular-nums">
+              {sourceStatus?.jsonl.total_sessions ?? '—'}
+            </div>
+          </div>
+          <div className="rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] p-3">
+            <div className="text-[10px] text-text-secondary mb-1">Last import</div>
+            <div className="text-xs font-medium text-[var(--text-primary)] leading-snug mt-0.5">
               {sourceStatus?.jsonl.last_import_at
                 ? new Date(sourceStatus.jsonl.last_import_at).toLocaleString()
                 : 'Never'}
-            </span>
+            </div>
           </div>
         </div>
-        <button
-          onClick={handleReimport}
-          disabled={reimporting}
-          className="mt-3 px-4 py-2 text-sm font-medium rounded-full transition-colors
-            bg-[var(--input-bg)] text-[var(--text-primary)] border border-[var(--input-border)]
-            hover:bg-[var(--bg-card-hover)]
-            disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {reimporting ? 'Re-importing...' : 'Full Re-import'}
-        </button>
       </GlassCard>
 
       <GlassCard>
-        <h2 className="text-sm font-medium text-text-primary mb-3">
-          Worklog
-        </h2>
-        <p className="text-xs text-text-secondary mb-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent-purple/10 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-accent-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
+              </svg>
+            </div>
+            <h2 className="text-sm font-medium text-text-primary">Worklog</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onRecomputeWorklogs}
+            disabled={recomputing}
+            className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
+              bg-accent-purple/10 text-accent-purple border border-accent-purple/20
+              hover:bg-accent-purple/20
+              disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {recomputing ? 'Recomputing…' : 'Recompute'}
+          </button>
+        </div>
+        <p className="text-[11px] text-text-secondary leading-relaxed">
           Recompute worklog totals across all sessions. Use this if numbers look wrong after an upgrade.
         </p>
-        <button
-          type="button"
-          onClick={onRecomputeWorklogs}
-          disabled={recomputing}
-          className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
-            bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20
-            hover:bg-accent-cyan/20
-            disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          {recomputing ? 'Recomputing…' : 'Recompute Worklogs'}
-        </button>
       </GlassCard>
 
       <GlassCard>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-medium text-text-primary">
-            Token Pricing
-          </h2>
-          <span className="text-[10px] text-text-secondary">per 1M tokens (USD)</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent-teal/10 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-accent-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-text-primary">Token pricing</h2>
+              <span className="text-[10px] text-text-secondary">per 1M tokens, USD</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetPricing}
+              className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
+                text-text-secondary border border-[var(--input-border)]
+                hover:text-[var(--text-primary)] hover:border-[var(--input-border-focus)]"
+            >
+              Reset
+            </button>
+            <button
+              onClick={handleSavePricing}
+              disabled={!hasPricingChanges || savingPricing}
+              className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
+                bg-accent-teal/10 text-accent-teal border border-accent-teal/20
+                hover:bg-accent-teal/20
+                disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {savingPricing ? 'Saving...' : 'Save'}
+            </button>
+          </div>
         </div>
 
         {editedPricing.length > 0 && (
-          <div className="space-y-3">
-            {/* Header */}
-            <div className="grid grid-cols-5 gap-2 text-[10px] text-text-secondary font-medium">
+          <div className="space-y-0">
+            <div className="grid grid-cols-5 gap-2 px-3 pb-2 text-[10px] text-text-secondary font-medium">
               <span>Model</span>
               <span>Input</span>
               <span>Output</span>
               <span>Cache Read</span>
               <span>Cache Write</span>
             </div>
-
-            {/* Rows */}
             {editedPricing.map((p, i) => (
-              <div key={p.model_key} className="grid grid-cols-5 gap-2 items-center">
-                <span className="text-xs text-[var(--text-primary)]">{p.display_name}</span>
+              <div key={p.model_key} className="grid grid-cols-5 gap-2 items-center px-3 py-1.5 border-t border-[var(--border-subtle)]">
+                <span className="text-xs font-medium text-[var(--text-primary)]">{p.display_name}</span>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
                   value={p.input_per_million}
                   onChange={(e) => updateField(i, 'input_per_million', e.target.value)}
-                  className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-full"
+                  className="px-2 py-1 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--input-border-focus)] w-full"
                 />
                 <input
                   type="number"
@@ -293,7 +330,7 @@ export function SettingsPage() {
                   min="0"
                   value={p.output_per_million}
                   onChange={(e) => updateField(i, 'output_per_million', e.target.value)}
-                  className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-full"
+                  className="px-2 py-1 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--input-border-focus)] w-full"
                 />
                 <input
                   type="number"
@@ -301,7 +338,7 @@ export function SettingsPage() {
                   min="0"
                   value={p.cache_read_per_million}
                   onChange={(e) => updateField(i, 'cache_read_per_million', e.target.value)}
-                  className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-full"
+                  className="px-2 py-1 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--input-border-focus)] w-full"
                 />
                 <input
                   type="number"
@@ -309,58 +346,42 @@ export function SettingsPage() {
                   min="0"
                   value={p.cache_write_per_million}
                   onChange={(e) => updateField(i, 'cache_write_per_million', e.target.value)}
-                  className="px-3 py-1 rounded-full bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--input-border-focus)] w-full"
+                  className="px-2 py-1 rounded-lg bg-[var(--input-bg)] border border-[var(--input-border)] text-xs text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--input-border-focus)] w-full"
                 />
               </div>
             ))}
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                onClick={handleSavePricing}
-                disabled={!hasPricingChanges || savingPricing}
-                className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
-                  bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20
-                  hover:bg-accent-cyan/20
-                  disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                {savingPricing ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={handleResetPricing}
-                className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
-                  text-text-secondary border border-[var(--input-border)]
-                  hover:text-[var(--text-primary)] hover:border-[var(--input-border-focus)]"
-              >
-                Reset to Defaults
-              </button>
-            </div>
-
-            <p className="text-[10px] text-text-secondary">
-              After changing prices, run a Full Re-import to recalculate all session costs.
-            </p>
           </div>
         )}
+
+        <p className="text-[10px] text-text-secondary mt-3">
+          After changing prices, run a Full Re-import to recalculate all session costs.
+        </p>
       </GlassCard>
 
       <GlassCard>
-        <h2 className="text-sm font-medium text-text-primary mb-3">
-          Danger Zone
-        </h2>
-        <p className="text-xs text-text-secondary mb-4">
-          Permanently delete all collected telemetry and imported data. This action cannot
-          be undone.
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center">
+              <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+            </div>
+            <h2 className="text-sm font-medium text-text-primary">Danger zone</h2>
+          </div>
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            disabled={clearing}
+            className="px-4 py-1.5 text-xs font-medium rounded-full transition-colors
+              bg-red-500/10 text-red-400 border border-red-500/20
+              hover:bg-red-500/20 hover:text-red-300
+              disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {clearing ? 'Clearing...' : 'Clear All Data'}
+          </button>
+        </div>
+        <p className="text-[11px] text-text-secondary leading-relaxed">
+          Permanently delete all collected telemetry and imported data. This action cannot be undone.
         </p>
-        <button
-          onClick={() => setShowClearConfirm(true)}
-          disabled={clearing}
-          className="px-4 py-2 text-sm font-medium rounded-full transition-colors
-            bg-red-500/10 text-red-400 border border-red-500/20
-            hover:bg-red-500/20 hover:text-red-300
-            disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {clearing ? 'Clearing...' : 'Clear All Data'}
-        </button>
         {clearError && (
           <p className="text-xs text-red-400 mt-2">{clearError}</p>
         )}

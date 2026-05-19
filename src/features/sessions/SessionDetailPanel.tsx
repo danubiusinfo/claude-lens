@@ -16,7 +16,6 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
-import { GlassCard } from '../../components/ui/GlassCard';
 import { CopyButton } from '../../components/ui/CopyButton';
 import { formatDuration } from '../../lib/duration';
 import { getSessionMessages, toggleSessionBookmark, renameSession } from '../../lib/tauri';
@@ -699,34 +698,34 @@ export function SessionDetailPanel({ session, open, onClose, onBookmarkToggle, o
 
               {/* Stats grid */}
               <div className="grid grid-cols-2 gap-3">
-                <GlassCard className="!p-3">
+                <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--glass-border)]">
                   <div className="text-xs text-[var(--text-secondary)] mb-1">Total Tokens</div>
                   <div className="text-lg font-semibold text-accent-cyan">
                     {session.total_tokens > 0
                       ? formatTokens(session.total_tokens)
                       : 'N/A'}
                   </div>
-                </GlassCard>
-                <GlassCard className="!p-3">
+                </div>
+                <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--glass-border)]">
                   <div className="text-xs text-[var(--text-secondary)] mb-1">Total Cost</div>
                   <div className="text-lg font-semibold text-accent-purple">
                     {session.total_cost_usd > 0
                       ? formatCost(session.total_cost_usd)
                       : 'N/A'}
                   </div>
-                </GlassCard>
-                <GlassCard className="!p-3">
+                </div>
+                <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--glass-border)]">
                   <div className="text-xs text-[var(--text-secondary)] mb-1">Events</div>
                   <div className="text-lg font-semibold text-accent-cyan">
                     {session.event_count}
                   </div>
-                </GlassCard>
-                <GlassCard className="!p-3">
+                </div>
+                <div className="p-3 rounded-2xl bg-[var(--bg-card)] border border-[var(--glass-border)]">
                   <div className="text-xs text-[var(--text-secondary)] mb-1">Tool Events</div>
                   <div className="text-lg font-semibold text-accent-purple">
                     {session.tool_event_count}
                   </div>
-                </GlassCard>
+                </div>
               </div>
 
               {/* Model badge */}

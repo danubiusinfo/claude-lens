@@ -9,8 +9,6 @@ interface SessionsListProps {
   loading: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onLoadMore: () => void;
-  hasMore: boolean;
 }
 
 function formatTokens(n: number): string {
@@ -65,8 +63,6 @@ export function SessionsList({
   loading,
   selectedId,
   onSelect,
-  onLoadMore,
-  hasMore,
 }: SessionsListProps) {
   const visibleIds = sessions.map((s) => s.id);
   const { data: worklogs } = useSessionWorklogs(visibleIds);
@@ -173,14 +169,6 @@ export function SessionsList({
         );
       })}
 
-      {hasMore && (
-        <button
-          onClick={onLoadMore}
-          className="w-full py-3 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card)] rounded-full border border-[var(--border-subtle)] transition-colors"
-        >
-          Load More
-        </button>
-      )}
     </div>
   );
 }

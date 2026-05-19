@@ -20,13 +20,14 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_liquid_glass::init())
         .setup(|app| {
-            let app_data_dir = app
+            let home_dir = app
                 .path()
-                .app_data_dir()
-                .expect("failed to resolve app data dir");
-            std::fs::create_dir_all(&app_data_dir).ok();
+                .home_dir()
+                .expect("failed to resolve home dir");
+            let data_dir = home_dir.join(".claudelens");
+            std::fs::create_dir_all(&data_dir).ok();
 
-            let db_path = app_data_dir.join("claudelens.db");
+            let db_path = data_dir.join("claudelens.db");
             let database = db::Database::new(&db_path)?;
             database.run_migrations()?;
 

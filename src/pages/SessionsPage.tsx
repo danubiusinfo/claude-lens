@@ -20,8 +20,6 @@ export function SessionsPage() {
     selectedId,
     selectSession,
     clearSelection,
-    loadMore,
-    hasMore,
     showBookmarked,
     setShowBookmarked,
     updateSessionBookmark,
@@ -104,34 +102,44 @@ export function SessionsPage() {
               {projectDropdownOpen && createPortal(
                 <div
                   ref={projectMenuRef}
-                  style={{ position: 'fixed', top: projectMenuPos.top, left: projectMenuPos.left, width: projectMenuPos.width }}
-                  className="z-[9999] glass-card !p-0 overflow-hidden max-h-[300px] overflow-y-auto"
+                  style={{
+                    position: 'fixed',
+                    top: projectMenuPos.top,
+                    left: projectMenuPos.left,
+                    width: projectMenuPos.width,
+                    backdropFilter: 'blur(60px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(60px) saturate(180%)',
+                    background: 'var(--bg-sidebar)',
+                  }}
+                  className="z-[9999] rounded-2xl border border-[var(--glass-border)] shadow-lg overflow-hidden"
                 >
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedProject(null); setProjectDropdownOpen(false); }}
-                    className={`flex items-center w-full px-3 py-2 text-xs transition-colors ${
-                      !selectedProject
-                        ? 'bg-accent-cyan/10 text-accent-cyan'
-                        : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
-                    }`}
-                  >
-                    <span className="font-medium">All projects</span>
-                  </button>
-                  {projects.map((p) => (
+                  <div className="max-h-[300px] overflow-y-auto py-1">
                     <button
-                      key={p}
                       type="button"
-                      onClick={() => { setSelectedProject(p); setProjectDropdownOpen(false); }}
-                      className={`flex items-center justify-between w-full px-3 py-2 text-xs transition-colors ${
-                        selectedProject === p
+                      onClick={() => { setSelectedProject(null); setProjectDropdownOpen(false); }}
+                      className={`flex items-center w-full px-3 py-2 text-xs transition-colors ${
+                        !selectedProject
                           ? 'bg-accent-cyan/10 text-accent-cyan'
                           : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                       }`}
                     >
-                      <span className="font-medium truncate">{shortenPath(p)}</span>
+                      <span className="font-medium">All projects</span>
                     </button>
-                  ))}
+                    {projects.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => { setSelectedProject(p); setProjectDropdownOpen(false); }}
+                        className={`flex items-center justify-between w-full px-3 py-2 text-xs transition-colors ${
+                          selectedProject === p
+                            ? 'bg-accent-cyan/10 text-accent-cyan'
+                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                        }`}
+                      >
+                        <span className="font-medium truncate">{shortenPath(p)}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>,
                 document.body
               )}
@@ -194,8 +202,6 @@ export function SessionsPage() {
         loading={loading}
         selectedId={selectedId}
         onSelect={selectSession}
-        onLoadMore={loadMore}
-        hasMore={hasMore}
       />
 
       <SessionDetailPanel

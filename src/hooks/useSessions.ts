@@ -3,7 +3,6 @@ import type { SessionRecord } from '../types';
 import { listSessions, getSessionDetail, listBookmarkedSessions, searchSessions, listDistinctProjects } from '../lib/tauri';
 import { useTauriEvent } from './useTauriEvent';
 
-const PAGE_SIZE = 50;
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface SessionsData {
@@ -14,8 +13,6 @@ interface SessionsData {
   selectedId: string | null;
   selectSession: (id: string) => void;
   clearSelection: () => void;
-  loadMore: () => void;
-  hasMore: boolean;
   showBookmarked: boolean;
   setShowBookmarked: (v: boolean) => void;
   updateSessionBookmark: (sessionId: string, bookmarked: boolean) => void;
@@ -32,8 +29,6 @@ export function useSessions(): SessionsData {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBookmarked, setShowBookmarked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,16 +41,11 @@ export function useSessions(): SessionsData {
     listDistinctProjects().then(setProjects).catch(console.error);
   }, []);
 
-  const fetchSessions = useCallback(async (off: number, append: boolean, project?: string | null) => {
+  const fetchSessions = useCallback(async (project?: string | null) => {
     setError(null);
     try {
-      const result = await listSessions(PAGE_SIZE, off, project);
-      if (append) {
-        setSessions((prev) => [...prev, ...result]);
-      } else {
-        setSessions(result);
-      }
-      setHasMore(result.length >= PAGE_SIZE);
+      const result = await listSessions(100_000, 0, project);
+      setSessions(result);
     } catch (err) {
       console.error('Failed to fetch sessions:', err);
       setError(err instanceof Error ? err.message : String(err));
@@ -69,7 +59,6 @@ export function useSessions(): SessionsData {
     try {
       const result = await listBookmarkedSessions();
       setSessions(result);
-      setHasMore(false);
     } catch (err) {
       console.error('Failed to fetch bookmarked sessions:', err);
       setError(err instanceof Error ? err.message : String(err));
@@ -83,7 +72,6 @@ export function useSessions(): SessionsData {
     try {
       const result = await searchSessions(query);
       setSessions(result);
-      setHasMore(false);
     } catch (err) {
       console.error('Failed to search sessions:', err);
       setError(err instanceof Error ? err.message : String(err));
@@ -97,7 +85,6 @@ export function useSessions(): SessionsData {
     if (searchTimer.current) clearTimeout(searchTimer.current);
 
     setLoading(true);
-    setOffset(0);
 
     if (searchQuery.trim()) {
       searchTimer.current = setTimeout(() => {
@@ -106,7 +93,7 @@ export function useSessions(): SessionsData {
     } else if (showBookmarked) {
       fetchBookmarked();
     } else {
-      fetchSessions(0, false, selectedProject);
+      fetchSessions(selectedProject);
     }
 
     return () => {
@@ -149,42 +136,32 @@ export function useSessions(): SessionsData {
     setSelectedSession(null);
   }, []);
 
-  const loadMore = useCallback(() => {
-    if (searchQuery.trim() || showBookmarked) return;
-    const newOffset = offset + PAGE_SIZE;
-    setOffset(newOffset);
-    fetchSessions(newOffset, true, selectedProject);
-  }, [offset, fetchSessions, searchQuery, showBookmarked, selectedProject]);
-
-  const refreshLoadedWindow = useCallback(async () => {
+  const refreshSessions = useCallback(async () => {
     setError(null);
     try {
-      const limit = offset + PAGE_SIZE;
-      const result = await listSessions(limit, 0, selectedProject);
+      const result = await listSessions(100_000, 0, selectedProject);
       setSessions(result);
-      setHasMore(result.length >= limit);
     } catch (err) {
-      console.error('Failed to refresh sessions window:', err);
+      console.error('Failed to refresh sessions:', err);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, [offset, selectedProject]);
+  }, [selectedProject]);
 
   const handleDbUpdate = useCallback(() => {
-    // do NOT reset offset — we want to keep the user's current scroll position
     listDistinctProjects().then(setProjects).catch(console.error);
     if (searchQuery.trim()) {
       fetchSearch(searchQuery.trim());
     } else if (showBookmarked) {
       fetchBookmarked();
     } else {
-      refreshLoadedWindow();
+      refreshSessions();
     }
     if (selectedId) {
       getSessionDetail(selectedId).then(setSelectedSession).catch(console.error);
     }
-  }, [refreshLoadedWindow, fetchBookmarked, fetchSearch, showBookmarked, searchQuery, selectedId]);
+  }, [refreshSessions, fetchBookmarked, fetchSearch, showBookmarked, searchQuery, selectedId]);
 
   useTauriEvent('db-updated', handleDbUpdate);
 
@@ -196,8 +173,6 @@ export function useSessions(): SessionsData {
     selectedId,
     selectSession,
     clearSelection,
-    loadMore,
-    hasMore,
     showBookmarked,
     setShowBookmarked,
     updateSessionBookmark,
