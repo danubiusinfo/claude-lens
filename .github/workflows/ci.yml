@@ -7,7 +7,15 @@ name: CI
 on:
   push:
     branches: [main]
+    # The marketing site in landing/ has its own workflow; a copy change there
+    # should not spend three installer builds.
+    paths-ignore:
+      - "landing/**"
+      - ".github/workflows/deploy-landing.yml"
   pull_request:
+    paths-ignore:
+      - "landing/**"
+      - ".github/workflows/deploy-landing.yml"
   workflow_dispatch:
 
 jobs:

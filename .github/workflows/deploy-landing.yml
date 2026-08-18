@@ -1,0 +1,86 @@
+name: Deploy landing page
+
+# The marketing site in landing/ is a separate Next.js project that exports to
+# static files. It publishes to GitHub Pages, independently of the app installers.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "landing/**"
+      - ".github/workflows/deploy-landing.yml"
+  workflow_dispatch:
+
+# The deploy job needs to write the Pages artifact and mint an OIDC token.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a newer push cancel an in-flight deploy, but never interrupt one midway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: landing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+
+      # Tells us where the site will live: origin (https://<owner>.github.io)
+      # and base_path (/claude-lens for this repo, empty at a domain root).
+      # `enablement` turns Pages on with build_type=workflow the first time this
+      # runs, so nobody has to flip it in Settings by hand.
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # Next needs a basePath without a trailing slash, and none at all when the
+      # site is served from the root.
+      - name: Resolve base path
+        id: base
+        run: |
+          raw='${{ steps.pages.outputs.base_path }}'
+          trimmed="${raw%/}"
+          if [ "$trimmed" = "/" ]; then trimmed=""; fi
+          echo "path=$trimmed" >> "$GITHUB_OUTPUT"
+          echo "Building for '${{ steps.pages.outputs.origin }}$trimmed'"
+
+      - run: npm ci
+
+      - name: Build static export
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.base.outputs.path }}
+          NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}${{ steps.base.outputs.path }}
+        run: |
+          npm run build
+          # Belt and braces: keeps _next/ intact if this is ever served by a
+          # branch-based Pages deploy, which does run Jekyll.
+          touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          # Paths here are relative to the workspace, not to `defaults.run`.
+          path: landing/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

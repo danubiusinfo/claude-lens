@@ -1,0 +1,339 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────
+   Tokens, lifted verbatim from the ClaudeLens app (src/index.css)
+   so the site and the product read as one surface. Dark is the
+   default; `.light` on <html> flips the palette exactly as the
+   app's Settings screen does.
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: dark;
+
+  --bg-primary: #161618;
+  --bg-secondary: #2c2c2e;
+  --bg-card: rgba(255, 255, 255, 0.06);
+  --bg-card-hover: rgba(255, 255, 255, 0.09);
+  --bg-topbar: rgba(26, 26, 29, 0.8);
+
+  --accent-cyan: #22d3ee;
+  --accent-purple: #a78bfa;
+  --accent-green: #4ade80;
+  --accent-amber: #f59e0b;
+  --accent-teal: #14b8a6;
+
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.45);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+
+  --glass-tint: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.1);
+  --glass-highlight-end: rgba(255, 255, 255, 0.03);
+  --glass-specular: rgba(255, 255, 255, 0.25);
+  --glass-specular-peak: rgba(255, 255, 255, 0.35);
+  --glass-card-highlight: rgba(255, 255, 255, 0.06);
+  --glass-card-highlight-end: rgba(255, 255, 255, 0.02);
+  --panel-surface: rgba(28, 28, 30, 0.92);
+  --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.25);
+
+  --heatmap-empty: rgba(255, 255, 255, 0.06);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.15);
+
+  --bubble-user: rgba(34, 211, 238, 0.1);
+  --bubble-user-border: rgba(34, 211, 238, 0.2);
+  --bubble-assistant: rgba(58, 58, 60, 0.5);
+  --bubble-assistant-border: rgba(255, 255, 255, 0.08);
+  --bubble-thinking: rgba(245, 158, 11, 0.08);
+  --bubble-thinking-border: rgba(245, 158, 11, 0.2);
+  --bubble-tool: rgba(20, 184, 166, 0.08);
+  --bubble-tool-border: rgba(20, 184, 166, 0.2);
+}
+
+:root.light {
+  color-scheme: light;
+
+  --bg-primary: #f2f2f7;
+  --bg-secondary: #e5e5ea;
+  --bg-card: rgba(0, 0, 0, 0.03);
+  --bg-card-hover: rgba(0, 0, 0, 0.05);
+  --bg-topbar: rgba(250, 250, 253, 0.84);
+
+  --accent-cyan: #0e7490;
+  --accent-purple: #6d28d9;
+  --accent-green: #15803d;
+  --accent-amber: #d97706;
+  --accent-teal: #0d9488;
+
+  --text-primary: rgba(0, 0, 0, 0.92);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --border-subtle: rgba(0, 0, 0, 0.1);
+
+  --glass-tint: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-highlight-end: rgba(255, 255, 255, 0.2);
+  --glass-specular: rgba(255, 255, 255, 0.7);
+  --glass-specular-peak: rgba(255, 255, 255, 0.9);
+  --glass-card-highlight: rgba(255, 255, 255, 0.5);
+  --glass-card-highlight-end: rgba(255, 255, 255, 0.15);
+  --panel-surface: rgba(248, 248, 250, 0.94);
+  --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.08);
+
+  --heatmap-empty: rgba(0, 0, 0, 0.06);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.12);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.22);
+
+  --bubble-user: rgba(14, 116, 144, 0.1);
+  --bubble-user-border: rgba(14, 116, 144, 0.25);
+  --bubble-assistant: rgba(0, 0, 0, 0.05);
+  --bubble-assistant-border: rgba(0, 0, 0, 0.12);
+  --bubble-thinking: rgba(180, 120, 0, 0.08);
+  --bubble-thinking-border: rgba(180, 120, 0, 0.2);
+  --bubble-tool: rgba(13, 148, 136, 0.08);
+  --bubble-tool-border: rgba(13, 148, 136, 0.2);
+}
+
+@theme inline {
+  --color-ink: var(--bg-primary);
+  --color-fg: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-line: var(--border-subtle);
+  --color-card: var(--bg-card);
+  --color-card-hover: var(--bg-card-hover);
+  --color-cyan: var(--accent-cyan);
+  --color-violet: var(--accent-purple);
+  --color-mint: var(--accent-green);
+  --color-amber: var(--accent-amber);
+  --color-teal: var(--accent-teal);
+
+  --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+
+  --shadow-card: var(--shadow-card);
+}
+
+/* The app's own font stack — used only inside the recreated app window so it
+   renders with the visitor's real system UI face, like the product does. */
+.font-system {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI Variable Display", "Segoe UI", system-ui, Inter, Roboto, "Noto Sans",
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Anchor targets clear the sticky top bar. */
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Dotted underlines otherwise collide with descenders. */
+  a {
+    text-underline-offset: 0.2em;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent-cyan) 30%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* ── Mesh gradient wallpaper ─────────────────────────────────── */
+
+  .mesh-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 60%, rgba(34, 211, 238, 0.1) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 85% 25%, rgba(167, 139, 250, 0.09) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 50% 90%, rgba(34, 211, 238, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 60% 10%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+      linear-gradient(160deg, rgba(22, 22, 24, 1) 0%, rgba(15, 15, 26, 1) 40%, rgba(22, 22, 24, 1) 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: mesh-shift 25s ease-in-out infinite alternate;
+  }
+
+  :root.light .mesh-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 60%, rgba(8, 145, 178, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 85% 25%, rgba(124, 58, 237, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 50% 90%, rgba(8, 145, 178, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 60% 10%, rgba(124, 58, 237, 0.04) 0%, transparent 50%),
+      linear-gradient(160deg, #f2f2f7 0%, #e8e8f0 40%, #f2f2f7 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+  }
+}
+
+@keyframes mesh-shift {
+  0% { background-position: 0% 0%, 100% 0%, 50% 100%, 60% 0%, 0% 0%; }
+  33% { background-position: 20% 30%, 80% 50%, 30% 70%, 40% 20%, 0% 0%; }
+  66% { background-position: 40% 10%, 60% 30%, 70% 50%, 80% 40%, 0% 0%; }
+  100% { background-position: 60% 40%, 40% 60%, 20% 30%, 50% 60%, 0% 0%; }
+}
+
+@layer components {
+  /* ── Liquid glass ────────────────────────────────────────────── */
+
+  .liquid-glass {
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(110%);
+    background: var(--glass-tint);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+  }
+
+  /* Top-left refraction edge — light hitting the pane. */
+  .liquid-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      var(--glass-highlight) 0%,
+      var(--glass-highlight-end) 20%,
+      transparent 50%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Specular top edge. */
+  .liquid-glass::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--glass-specular) 30%,
+      var(--glass-specular-peak) 50%,
+      var(--glass-specular) 70%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* The page header keeps a denser tint than a plain glass panel: it scrolls
+     over app screenshots, and its labels have to stay readable there. */
+  .glass-topbar {
+    background: var(--bg-topbar);
+  }
+
+  .glass-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+  }
+
+  .glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      var(--glass-card-highlight) 0%,
+      var(--glass-card-highlight-end) 30%,
+      transparent 60%
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Coloured bloom behind a card, matching the app's glow-* classes. */
+  .glow-cyan { box-shadow: var(--shadow-card), 0 0 40px -18px var(--accent-cyan); }
+  .glow-violet { box-shadow: var(--shadow-card), 0 0 40px -18px var(--accent-purple); }
+  .glow-mint { box-shadow: var(--shadow-card), 0 0 40px -18px var(--accent-green); }
+
+  /* ── Hero choreography ──────────────────────────────────────── */
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@layer components {
+  .rise {
+    animation: rise 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes draw {
+  from { stroke-dashoffset: var(--dash, 1000); }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes cell-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: none; }
+}
+
+@layer components {
+  /* Sections fade up once, on first scroll into view. Gated on `.js` so the
+     page stays fully readable when the script never runs. */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .js .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ── Scrollbars, matching the app ───────────────────────────── */
+
+  .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+  }
+  .scroll-thin::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .mesh-bg { animation: none; }
+  .rise,
+  .reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  [class*="animate-"] { animation: none !important; }
+}
