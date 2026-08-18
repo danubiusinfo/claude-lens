@@ -27,12 +27,21 @@ static host will do.
 
 `.github/workflows/deploy-landing.yml` (at the repository root, where Actions
 looks for workflows) builds and publishes on every push to `main` that touches
-`landing/**`. It passes `enablement: true` to `actions/configure-pages`, so the
-first run switches Pages on by itself — no visit to Settings needed.
+`landing/**`.
 
-**The repository has to be public.** GitHub Pages only serves private
-repositories on Enterprise Cloud; anywhere else the deploy job fails at the
-enablement step.
+Two things had to be true once, before the first successful run:
+
+- **The repository is public.** GitHub Pages only serves private repositories on
+  Enterprise Cloud.
+- **The Pages site exists with `build_type: workflow`.** Set it under
+  **Settings → Pages → Build and deployment → Source: GitHub Actions**, or over
+  the API with an admin token:
+  ```bash
+  gh api -X POST repos/danubiusinfo/claude-lens/pages -f build_type=workflow
+  ```
+  The workflow cannot do this for you: `GITHUB_TOKEN` may deploy to an existing
+  site, but creating one needs admin rights, so `configure-pages` with
+  `enablement: true` fails with *Resource not accessible by integration*.
 
 The workflow reads the site URL from `actions/configure-pages`, so it works
 unchanged for this project site (`/claude-lens`), an organisation site, or a

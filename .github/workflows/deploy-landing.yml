@@ -39,13 +39,14 @@ jobs:
 
       # Tells us where the site will live: origin (https://<owner>.github.io)
       # and base_path (/claude-lens for this repo, empty at a domain root).
-      # `enablement` turns Pages on with build_type=workflow the first time this
-      # runs, so nobody has to flip it in Settings by hand.
+      #
+      # No `enablement: true` here: creating the Pages site needs admin rights,
+      # which GITHUB_TOKEN does not have even with `pages: write`. It fails with
+      # "Resource not accessible by integration". The site is created once, by
+      # hand or over the API, and this step only reads it.
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       # Next needs a basePath without a trailing slash, and none at all when the
       # site is served from the root.
