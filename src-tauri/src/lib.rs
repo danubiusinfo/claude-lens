@@ -3,6 +3,7 @@ mod db;
 mod error;
 mod events;
 mod jsonl;
+mod menu;
 mod models;
 mod pricing;
 mod state;
@@ -19,6 +20,12 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_liquid_glass::init())
+        .menu(|handle| menu::build_menu(handle))
+        .on_menu_event(|app, event| {
+            if event.id() == menu::ABOUT_MENU_ID {
+                menu::show_about_window(app);
+            }
+        })
         .setup(|app| {
             let home_dir = app
                 .path()
@@ -101,6 +108,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::status::get_app_status,
+            commands::system::open_external_url,
             commands::settings::clear_local_data,
             commands::settings::get_model_pricing,
             commands::settings::update_model_pricing,

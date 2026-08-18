@@ -4,6 +4,7 @@ import { listSessions, getSessionDetail, listBookmarkedSessions, searchSessions,
 import { useTauriEvent } from './useTauriEvent';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const SESSIONS_LIMIT = 100_000;
 
 interface SessionsData {
   sessions: SessionRecord[];
@@ -44,7 +45,7 @@ export function useSessions(): SessionsData {
   const fetchSessions = useCallback(async (project?: string | null) => {
     setError(null);
     try {
-      const result = await listSessions(100_000, 0, project);
+      const result = await listSessions(SESSIONS_LIMIT, 0, project);
       setSessions(result);
     } catch (err) {
       console.error('Failed to fetch sessions:', err);
@@ -136,19 +137,6 @@ export function useSessions(): SessionsData {
     setSelectedSession(null);
   }, []);
 
-  const refreshSessions = useCallback(async () => {
-    setError(null);
-    try {
-      const result = await listSessions(100_000, 0, selectedProject);
-      setSessions(result);
-    } catch (err) {
-      console.error('Failed to refresh sessions:', err);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedProject]);
-
   const handleDbUpdate = useCallback(() => {
     listDistinctProjects().then(setProjects).catch(console.error);
     if (searchQuery.trim()) {
@@ -156,12 +144,12 @@ export function useSessions(): SessionsData {
     } else if (showBookmarked) {
       fetchBookmarked();
     } else {
-      refreshSessions();
+      fetchSessions(selectedProject);
     }
     if (selectedId) {
       getSessionDetail(selectedId).then(setSelectedSession).catch(console.error);
     }
-  }, [refreshSessions, fetchBookmarked, fetchSearch, showBookmarked, searchQuery, selectedId]);
+  }, [fetchSessions, fetchBookmarked, fetchSearch, showBookmarked, searchQuery, selectedId, selectedProject]);
 
   useTauriEvent('db-updated', handleDbUpdate);
 

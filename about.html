@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About ClaudeLens</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --about-bg: #1c1c1e;
+        --about-fg: rgba(255, 255, 255, 0.95);
+        --about-muted: rgba(255, 255, 255, 0.45);
+        --about-link: #22d3ee;
+      }
+
+      :root.light {
+        color-scheme: light;
+        --about-bg: #f2f2f7;
+        --about-fg: rgba(0, 0, 0, 0.92);
+        --about-muted: rgba(0, 0, 0, 0.55);
+        --about-link: #0e7490;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        height: 100vh;
+        background: var(--about-bg);
+        color: var(--about-fg);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI Variable Display', 'Segoe UI', system-ui, Inter, Roboto, 'Noto Sans', Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+        cursor: default;
+      }
+
+      .about {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 24px 28px 32px;
+        text-align: center;
+      }
+
+      .about__icon {
+        width: 112px;
+        height: 112px;
+        -webkit-user-drag: none;
+      }
+
+      .about__name {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .about__version {
+        margin-top: -8px;
+        font-size: 11px;
+        color: var(--about-muted);
+      }
+
+      .about__credit {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--about-muted);
+      }
+
+      .about__link {
+        color: var(--about-link);
+        text-decoration: none;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .about__link:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="about">
+      <img class="about__icon" src="/app-icon.png" alt="ClaudeLens" />
+      <h1 class="about__name">ClaudeLens</h1>
+      <p class="about__version" id="about-version"></p>
+      <p class="about__credit">
+        Crafted with ❤️ by
+        <a class="about__link" id="about-link" href="https://danubius.io">danubius.io</a>
+      </p>
+    </main>
+    <script type="module" src="/src/about.ts"></script>
+  </body>
+</html>

@@ -17,6 +17,9 @@
   --border-subtle: rgba(255, 255, 255, 0.08);
   --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.25);
   --glass-tint: rgba(255, 255, 255, 0.05);
+  /* Opaque-ish surface for overlay panels/menus that must stay readable
+     over dense page content (session detail, dropdown menus) */
+  --panel-surface: rgba(28, 28, 30, 0.92);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-highlight: rgba(255, 255, 255, 0.10);
   --glass-highlight-end: rgba(255, 255, 255, 0.03);
@@ -60,6 +63,7 @@
   --border-subtle: rgba(0, 0, 0, 0.10);
   --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.08);
   --glass-tint: rgba(255, 255, 255, 0.45);
+  --panel-surface: rgba(248, 248, 250, 0.94);
   --glass-border: rgba(0, 0, 0, 0.10);
   --glass-highlight: rgba(255, 255, 255, 0.60);
   --glass-highlight-end: rgba(255, 255, 255, 0.20);
@@ -102,7 +106,7 @@ html, body, #root {
   height: 100%;
   background: var(--bg-primary);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, "Helvetica Neue", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI Variable Display", "Segoe UI", system-ui, Inter, Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -426,7 +430,7 @@ html, body, #root {
 }
 
 .plan-markdown code {
-  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-family: "SF Mono", "Cascadia Mono", Consolas, "Fira Code", "JetBrains Mono", "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
   font-size: 0.8125rem;
   padding: 0.15em 0.4em;
   border-radius: 6px;
