@@ -90,13 +90,7 @@ pub async fn reveal_plan_in_finder(filename: String) -> Result<(), AppError> {
         return Err(AppError::Internal(format!("Plan not found: {}", filename)));
     }
 
-    std::process::Command::new("open")
-        .arg("-R")
-        .arg(&path)
-        .spawn()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    Ok(())
+    crate::commands::system::reveal_in_file_manager(&path)
 }
 
 #[tauri::command]

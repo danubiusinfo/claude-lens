@@ -4,12 +4,8 @@ import { useSessions } from '../hooks/useSessions';
 import { SessionsList } from '../features/sessions/SessionsList';
 import { SessionDetailPanel } from '../features/sessions/SessionDetailPanel';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { shortenPath } from '../lib/paths';
 
-function shortenPath(path: string): string {
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length <= 2) return path;
-  return parts.slice(-2).join('/');
-}
 
 export function SessionsPage() {
   const {
@@ -107,13 +103,11 @@ export function SessionsPage() {
                     top: projectMenuPos.top,
                     left: projectMenuPos.left,
                     width: projectMenuPos.width,
-                    backdropFilter: 'blur(60px) saturate(180%)',
-                    WebkitBackdropFilter: 'blur(60px) saturate(180%)',
-                    background: 'var(--bg-sidebar)',
+                    background: 'var(--panel-surface)',
                   }}
-                  className="z-[9999] rounded-2xl border border-[var(--glass-border)] shadow-lg overflow-hidden"
+                  className="z-[9999] glass-card !p-0"
                 >
-                  <div className="max-h-[300px] overflow-y-auto py-1">
+                  <div className="max-h-[420px] overflow-y-auto overscroll-contain">
                     <button
                       type="button"
                       onClick={() => { setSelectedProject(null); setProjectDropdownOpen(false); }}
@@ -135,6 +129,7 @@ export function SessionsPage() {
                             ? 'bg-accent-cyan/10 text-accent-cyan'
                             : 'text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                         }`}
+                        title={p}
                       >
                         <span className="font-medium truncate">{shortenPath(p)}</span>
                       </button>

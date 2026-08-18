@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { revealPlanInFinder } from '../../lib/tauri';
+import { fileManagerName } from '../../lib/platform';
 import type { PlanEntry } from '../../types';
 
 interface PlanDetailPanelProps {
@@ -184,7 +185,7 @@ export function PlanDetailPanel({ plan, open, onClose }: PlanDetailPanelProps) {
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                   </svg>
-                  Open in Finder
+                  Open in {fileManagerName()}
                 </button>
                 <CopyContentButton text={plan.content} />
               </div>

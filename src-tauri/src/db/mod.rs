@@ -804,9 +804,11 @@ impl Database {
         let rows = stmt
             .query_map(params![limit], |row| {
                 let path: String = row.get(0)?;
+                // Transcripts recorded on Windows carry backslash-separated
+                // paths, so both separators have to end a segment.
                 let name = path
-                    .rsplit('/')
-                    .next()
+                    .rsplit(['/', '\\'])
+                    .find(|segment| !segment.is_empty())
                     .unwrap_or(&path)
                     .to_string();
                 Ok(ProjectStats {

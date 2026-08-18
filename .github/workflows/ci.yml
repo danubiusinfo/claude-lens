@@ -1,0 +1,102 @@
+name: CI
+
+# Builds installers for all three platforms on every push to main and on PRs,
+# and uploads them as workflow artifacts. This is what catches cross-platform
+# regressions (a macOS-only syscall, a bad icon.ico) before you cut a tag, and
+# it also lets colleagues grab a build off main without waiting for a release.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: universal-apple-darwin
+            # `universal-apple-darwin` is a Tauri pseudo-target that lipos two
+            # real triples together; rustup has to install both.
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            label: macos
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            rust_targets: x86_64-unknown-linux-gnu
+            label: linux
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            rust_targets: x86_64-pc-windows-msvc
+            label: windows
+
+    runs-on: ${{ matrix.platform }}
+    name: ${{ matrix.label }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            librsvg2-common \
+            desktop-file-utils \
+            squashfs-tools \
+            patchelf \
+            pkg-config \
+            build-essential \
+            file \
+            curl \
+            wget
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+          components: clippy
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          key: ${{ matrix.target }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Typecheck and build frontend
+        run: npm run build
+
+      - name: Bundle
+        run: npm run tauri -- build --target ${{ matrix.target }}
+
+      - name: Collect installers
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          BUNDLE="src-tauri/target/${{ matrix.target }}/release/bundle"
+          find "$BUNDLE" \
+            -type f \
+            \( -name '*.dmg' -o -name '*.deb' -o -name '*.rpm' \
+               -o -name '*.AppImage' -o -name '*.msi' -o -name '*-setup.exe' \) \
+            -exec cp {} artifacts/ \;
+          ls -la artifacts/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: claudelens-${{ matrix.label }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14

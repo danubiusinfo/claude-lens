@@ -3,6 +3,7 @@ import { useSessionWorklogs } from '../../hooks/useSessionWorklogs';
 import { Bot } from 'lucide-react';
 import { formatDuration } from '../../lib/duration';
 import type { SessionRecord } from '../../types';
+import { shortenPath } from '../../lib/paths';
 
 interface SessionsListProps {
   sessions: SessionRecord[];
@@ -43,20 +44,6 @@ function formatTimeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-function shortenPath(path: string): string {
-  // Show just the last 2 segments
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length <= 2) return path;
-  return parts.slice(-2).join('/');
-}
-
-function SourceBadge() {
-  return (
-    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-card)] text-[var(--text-secondary)]">
-      JSONL
-    </span>
-  );
-}
 
 export function SessionsList({
   sessions,
@@ -121,7 +108,6 @@ export function SessionsList({
                 <span className="text-sm font-medium text-[var(--text-primary)]">
                   {formatTime(session.first_seen_at)}
                 </span>
-                <SourceBadge />
               </div>
               <span className="text-xs text-[var(--text-secondary)]">
                 {formatTimeAgo(session.last_seen_at)}

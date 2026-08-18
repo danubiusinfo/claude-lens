@@ -1,0 +1,107 @@
+name: Release
+
+# Tag a commit to cut a release:
+#   npm version patch && git push --follow-tags
+# The workflow builds every platform in parallel and collects the installers
+# into a single draft GitHub Release, which you publish by hand once you have
+# smoke-tested the artifacts.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to publish the draft release under (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # One universal .dmg/.app covering both Apple Silicon and Intel Macs.
+          - platform: macos-latest
+            target: universal-apple-darwin
+            # `universal-apple-darwin` is a Tauri pseudo-target that lipos two
+            # real triples together; rustup has to install both.
+            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            label: macos
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            rust_targets: x86_64-unknown-linux-gnu
+            label: linux
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            rust_targets: x86_64-pc-windows-msvc
+            label: windows
+
+    runs-on: ${{ matrix.platform }}
+    name: ${{ matrix.label }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # WebKitGTK 4.1 is the webview Tauri v2 links against on Linux; the rest
+      # are needed by the AppImage and .deb bundlers.
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            librsvg2-common \
+            desktop-file-utils \
+            squashfs-tools \
+            patchelf \
+            pkg-config \
+            build-essential \
+            file \
+            curl \
+            wget
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          key: ${{ matrix.target }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and bundle
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --target ${{ matrix.target }}
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          releaseName: "ClaudeLens ${{ github.event.inputs.tag || github.ref_name }}"
+          releaseBody: |
+            Unsigned builds — see `docs/INSTALL.md` for the per-platform
+            first-launch steps (Gatekeeper on macOS, SmartScreen on Windows).
+
+            | Platform | Download |
+            |---|---|
+            | macOS (Apple Silicon + Intel) | `.dmg` |
+            | Windows 10/11 x64 | `.exe` (NSIS installer) |
+            | Linux x64 | `.AppImage`, `.deb` or `.rpm` |
+          releaseDraft: true
+          prerelease: false

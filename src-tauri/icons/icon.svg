@@ -1,32 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    ClaudeLens app icon.
+
+    Vector reconstruction of icons/128x128@2x.png. Every coordinate was measured
+    off the 1024x1024 layer of icon.icns:
+      tile      x 56..968, y 42..966, corner radius 217 (least-squares arc fit)
+      lens      centre 640,397 - rim 197..210 - bezel 210..236 (circle fit to
+                the dark rim, eyes and handle excluded as outliers)
+      figure    rectangles from run-length scanning the orange mask; the shape
+                is symmetric about x=481, and the two right-hand feet only look
+                shorter in the raster because the lens rim crops them
+      handle    principal-axis fit of its dark mask: 48.8 deg, length 353,
+                widening 96 -> 127, tip rounded at r 63.5 (tip lands at
+                943,842 against 942,840 measured)
+
+    The glass tint sits *under* the figure on purpose: in the raster the orange
+    reads the same inside the lens (#FE6425) as outside (#FE6727), while the
+    empty parts of the lens are tinted grey. Only the specular gloss goes on top.
+  -->
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e1e2e"/>
-      <stop offset="100%" style="stop-color:#11111b"/>
+    <!-- Bezel: lit from the upper left, falling into shadow at the lower right. -->
+    <linearGradient id="cl-bezel" x1="0.10" y1="0.04" x2="0.86" y2="0.96">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.30" stop-color="#F2F4F5"/>
+      <stop offset="0.62" stop-color="#D6DBDE"/>
+      <stop offset="0.85" stop-color="#C3C8CC"/>
+      <stop offset="1" stop-color="#B4BABF"/>
     </linearGradient>
-    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#67e8f9"/>
-      <stop offset="100%" style="stop-color:#06b6d4"/>
+
+    <!--
+      Runs across the handle, not along it: in the raster the tone is flat
+      lengthwise and carries a cylinder highlight across the width. Stops are a
+      direct transcription of a perpendicular sample sweep at the mid-point.
+    -->
+    <linearGradient id="cl-handle" gradientUnits="userSpaceOnUse"
+                    x1="890.1" y1="695.1" x2="805.9" y2="768.9">
+      <stop offset="0.000" stop-color="#191F24"/>
+      <stop offset="0.125" stop-color="#394045"/>
+      <stop offset="0.250" stop-color="#4B5257"/>
+      <stop offset="0.375" stop-color="#41494D"/>
+      <stop offset="0.500" stop-color="#31393D"/>
+      <stop offset="0.625" stop-color="#1A2025"/>
+      <stop offset="0.750" stop-color="#181F24"/>
+      <stop offset="0.875" stop-color="#1D2429"/>
+      <stop offset="1.000" stop-color="#454E52"/>
     </linearGradient>
-    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#c4b5fd"/>
-      <stop offset="100%" style="stop-color:#7c3aed"/>
+
+    <!-- Grey cast of the glass over the empty tile behind it. -->
+    <linearGradient id="cl-glass-tint" x1="0.72" y1="0" x2="0.32" y2="1">
+      <stop offset="0" stop-color="#E4E5E7"/>
+      <stop offset="0.55" stop-color="#F3F3F4"/>
+      <stop offset="1" stop-color="#FDFDFE"/>
     </linearGradient>
+
+    <!-- Crescent hugging the inside of the rim, brightest at the upper left. -->
+    <linearGradient id="cl-crescent" x1="0.08" y1="0.08" x2="0.60" y2="0.66">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.92"/>
+      <stop offset="0.26" stop-color="#FFFFFF" stop-opacity="0.46"/>
+      <stop offset="0.50" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Broad gloss over the upper-left quadrant of the glass. -->
+    <radialGradient id="cl-sheen" cx="0.30" cy="0.24" r="0.58">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.44"/>
+      <stop offset="0.40" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+
+    <clipPath id="cl-lens">
+      <circle cx="640" cy="397" r="196"/>
+    </clipPath>
+
+    <!-- Keeps the handle out of the glass; the rim and bezel cover the cut. -->
+    <mask id="cl-outside-lens" maskUnits="userSpaceOnUse"
+          x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#FFFFFF"/>
+      <circle cx="640" cy="397" r="197" fill="#000000"/>
+    </mask>
+
+    <filter id="cl-shadow" x="-25%" y="-25%" width="160%" height="160%">
+      <feDropShadow dx="4" dy="12" stdDeviation="14"
+                    flood-color="#5B626B" flood-opacity="0.24"/>
+    </filter>
   </defs>
 
-  <!-- Rounded square background -->
-  <rect x="40" y="40" width="944" height="944" rx="210" ry="210" fill="url(#bg)"/>
-  <rect x="40" y="40" width="944" height="944" rx="210" ry="210" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+  <!-- App tile -->
+  <rect x="56" y="42" width="912" height="924" rx="217" ry="217" fill="#FEFEFE"/>
 
-  <!-- Magnifying glass - lens circle (thick, bold) -->
-  <circle cx="430" cy="410" r="220" fill="none" stroke="url(#cyan)" stroke-width="48"/>
+  <!-- Glass tint, behind the figure -->
+  <circle cx="640" cy="397" r="196" fill="url(#cl-glass-tint)"/>
 
-  <!-- Magnifying glass - handle -->
-  <line x1="598" y1="578" x2="780" y2="760" stroke="url(#purple)" stroke-width="56" stroke-linecap="round"/>
+  <!-- Creature -->
+  <g fill="#FE6727">
+    <rect x="165" y="379" width="631" height="98"/>
+    <rect x="268" y="282" width="426" height="270"/>
+    <rect x="268" y="552" width="57" height="79"/>
+    <rect x="380" y="552" width="57" height="79"/>
+    <rect x="525" y="552" width="57" height="79"/>
+    <rect x="637" y="552" width="57" height="79"/>
+  </g>
+  <g fill="#1A2027">
+    <rect x="325" y="327" width="55" height="53"/>
+    <rect x="581" y="327" width="55" height="53"/>
+  </g>
 
-  <!-- Terminal prompt ">" inside lens -->
-  <path d="M 320 360 L 420 415 L 320 470" fill="none" stroke="#67e8f9" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Specular gloss, on top of everything inside the rim -->
+  <g clip-path="url(#cl-lens)">
+    <circle cx="640" cy="397" r="196" fill="url(#cl-sheen)"/>
+    <circle cx="640" cy="397" r="186" fill="none"
+            stroke="url(#cl-crescent)" stroke-width="15"/>
+  </g>
 
-  <!-- Terminal cursor "_" inside lens -->
-  <line x1="450" y1="470" x2="545" y2="470" stroke="#a78bfa" stroke-width="36" stroke-linecap="round"/>
+  <!-- Magnifier body: handle first so the bezel covers the joint -->
+  <g filter="url(#cl-shadow)">
+    <path mask="url(#cl-outside-lens)" fill="url(#cl-handle)"
+          d="M663.7 594.3 L854.2 835.5 A63.5 63.5 0 0 0 949.8 751.9 L735.9 531.1 Z"/>
+    <circle cx="640" cy="397" r="203" fill="none" stroke="#2B3237" stroke-width="14"/>
+    <circle cx="640" cy="397" r="222.5" fill="none" stroke="url(#cl-bezel)" stroke-width="26"/>
+  </g>
 </svg>
