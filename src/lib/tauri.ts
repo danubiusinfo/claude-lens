@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
   AppStatusResponse,
+  ClaudeRootInfo,
   DailyUsageRecord,
   DashboardSummary,
   DayWorklogProject,
@@ -10,6 +11,7 @@ import type {
   ProjectStats,
   SessionMessage,
   SessionRecord,
+  SourceSettings,
   SourceStatusInfo,
   TimeRange,
   TimeseriesPoint,
@@ -134,6 +136,26 @@ export async function runJsonlImport(
 
 export async function getSourceStatus(): Promise<SourceStatusInfo> {
   return invoke('get_source_status');
+}
+
+export async function listClaudeRoots(): Promise<ClaudeRootInfo[]> {
+  return invoke('list_claude_roots');
+}
+
+export async function getSourceSettings(): Promise<SourceSettings> {
+  return invoke('get_source_settings');
+}
+
+export async function setWslScanEnabled(enabled: boolean): Promise<void> {
+  return invoke('set_wsl_scan_enabled', { enabled });
+}
+
+export async function setJsonlDirectoryOverride(path: string | null): Promise<void> {
+  return invoke('set_jsonl_directory_override', { path });
+}
+
+export async function rescanSources(): Promise<unknown> {
+  return invoke('rescan_sources');
 }
 
 // ── Pricing Commands ──────────────────────────────────────────

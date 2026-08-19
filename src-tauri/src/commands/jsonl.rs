@@ -1,6 +1,7 @@
 use serde::Serialize;
 use tauri::State;
 
+use crate::claude_roots::{self, ClaudeRoot, RootKind};
 use crate::error::AppError;
 use crate::jsonl::discovery::discover_jsonl_paths;
 use crate::jsonl::import::run_import;
@@ -8,6 +9,38 @@ use crate::jsonl::status::JsonlStatusInfo;
 use crate::jsonl::types::ImportResult;
 use crate::models::{ImportRecord, SourceFileRecord};
 use crate::state::AppState;
+
+/// One `.claude` directory as shown in Settings.
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct ClaudeRootInfo {
+    pub path: String,
+    pub label: String,
+    pub kind: RootKind,
+    pub exists: bool,
+    pub jsonl_file_count: usize,
+}
+
+/// Current source configuration, for the Settings screen.
+#[derive(Debug, Serialize)]
+pub struct SourceSettings {
+    pub override_dir: Option<String>,
+    pub wsl_scan_enabled: bool,
+    pub is_windows: bool,
+}
+
+/// Describe each root for the UI, including how many JSONL files it holds.
+pub fn describe_roots(roots: &[ClaudeRoot]) -> Vec<ClaudeRootInfo> {
+    roots
+        .iter()
+        .map(|root| ClaudeRootInfo {
+            path: root.path.to_string_lossy().to_string(),
+            label: root.label.clone(),
+            kind: root.kind,
+            exists: root.path.exists(),
+            jsonl_file_count: discover_jsonl_paths(std::slice::from_ref(root)).len(),
+        })
+        .collect()
+}
 
 #[derive(Debug, Serialize)]
 pub struct SourceStatusInfo {
@@ -21,13 +54,8 @@ pub struct SourceStatusInfo {
 pub async fn discover_jsonl_sources(
     state: State<'_, AppState>,
 ) -> Result<Vec<SourceFileRecord>, AppError> {
-    let override_dir = state
-        .database()
-        .get_app_setting("jsonl_directory_override")
-        .ok()
-        .flatten();
-
-    let discovered = discover_jsonl_paths(override_dir.as_deref());
+    let roots = claude_roots::roots(state.database());
+    let discovered = discover_jsonl_paths(&roots);
     let now = chrono::Utc::now().to_rfc3339();
 
     let mut result = Vec::new();
@@ -115,26 +143,23 @@ pub async fn set_jsonl_directory_override(
     state: State<'_, AppState>,
     path: Option<String>,
 ) -> Result<(), AppError> {
-    match path {
-        Some(p) => state.database().set_app_setting("jsonl_directory_override", &p),
-        None => {
-            // Clear override — set to empty
-            state.database().set_app_setting("jsonl_directory_override", "")
-        }
-    }
+    let value = path.unwrap_or_default();
+    state
+        .database()
+        .set_app_setting(claude_roots::OVERRIDE_SETTING, value.trim())?;
+    // The roots are cached, so the new setting only takes effect after a reset.
+    claude_roots::invalidate_cache();
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn rescan_sources(
     state: State<'_, AppState>,
 ) -> Result<Vec<SourceFileRecord>, AppError> {
-    let override_dir = state
-        .database()
-        .get_app_setting("jsonl_directory_override")
-        .ok()
-        .flatten();
-
-    let discovered = discover_jsonl_paths(override_dir.as_deref());
+    // A rescan is the user asking us to look again — re-detect the roots too.
+    claude_roots::invalidate_cache();
+    let roots = claude_roots::roots(state.database());
+    let discovered = discover_jsonl_paths(&roots);
     let now = chrono::Utc::now().to_rfc3339();
 
     let mut result = Vec::new();
@@ -155,4 +180,110 @@ pub async fn rescan_sources(
     }
 
     Ok(result)
+}
+
+#[tauri::command]
+pub async fn list_claude_roots(
+    state: State<'_, AppState>,
+) -> Result<Vec<ClaudeRootInfo>, AppError> {
+    let roots = claude_roots::roots(state.database());
+    Ok(describe_roots(&roots))
+}
+
+#[tauri::command]
+pub async fn get_source_settings(
+    state: State<'_, AppState>,
+) -> Result<SourceSettings, AppError> {
+    let override_dir = state
+        .database()
+        .get_app_setting(claude_roots::OVERRIDE_SETTING)
+        .ok()
+        .flatten()
+        .filter(|v| !v.trim().is_empty());
+
+    let wsl_scan_enabled = state
+        .database()
+        .get_app_setting(claude_roots::WSL_SCAN_SETTING)
+        .ok()
+        .flatten()
+        .map_or(true, |v| v != "0");
+
+    Ok(SourceSettings {
+        override_dir,
+        wsl_scan_enabled,
+        is_windows: cfg!(target_os = "windows"),
+    })
+}
+
+#[tauri::command]
+pub async fn set_wsl_scan_enabled(
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> Result<(), AppError> {
+    state
+        .database()
+        .set_app_setting(claude_roots::WSL_SCAN_SETTING, if enabled { "1" } else { "0" })?;
+    claude_roots::invalidate_cache();
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::{Path, PathBuf};
+
+    fn write(path: &Path) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, b"{}\n").unwrap();
+    }
+
+    fn root(path: PathBuf, kind: RootKind) -> ClaudeRoot {
+        ClaudeRoot { path, label: "test".to_string(), kind }
+    }
+
+    #[test]
+    fn counts_jsonl_files_per_root() {
+        let tmp = tempfile::tempdir().unwrap();
+        let native = tmp.path().join("windows/.claude");
+        let wsl = tmp.path().join("wsl/.claude");
+        write(&native.join("projects/proj/aaa.jsonl"));
+        write(&wsl.join("projects/proj/bbb.jsonl"));
+        write(&wsl.join("projects/proj/ccc.jsonl"));
+
+        let infos = describe_roots(&[root(native, RootKind::Native), root(wsl, RootKind::Wsl)]);
+
+        assert_eq!(
+            infos.iter().map(|i| i.jsonl_file_count).collect::<Vec<_>>(),
+            vec![1, 2]
+        );
+        assert!(infos.iter().all(|i| i.exists));
+    }
+
+    #[test]
+    fn reports_a_missing_root_as_absent() {
+        let tmp = tempfile::tempdir().unwrap();
+
+        let infos = describe_roots(&[root(tmp.path().join("gone/.claude"), RootKind::Manual)]);
+
+        assert_eq!(infos.len(), 1);
+        assert!(!infos[0].exists);
+        assert_eq!(infos[0].jsonl_file_count, 0);
+    }
+
+    #[test]
+    fn keeps_path_and_label_for_display() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("wsl/.claude");
+        write(&path.join("history.jsonl"));
+
+        let infos = describe_roots(&[ClaudeRoot {
+            path: path.clone(),
+            label: "WSL: Ubuntu/beno".to_string(),
+            kind: RootKind::Wsl,
+        }]);
+
+        assert_eq!(infos[0].path, path.to_string_lossy().to_string());
+        assert_eq!(infos[0].label, "WSL: Ubuntu/beno");
+        assert_eq!(infos[0].kind, RootKind::Wsl);
+    }
 }

@@ -158,6 +158,22 @@ export interface SourceStatusInfo {
   total_jsonl_sessions: number;
 }
 
+export type ClaudeRootKind = 'native' | 'wsl' | 'manual';
+
+export interface ClaudeRootInfo {
+  path: string;
+  label: string;
+  kind: ClaudeRootKind;
+  exists: boolean;
+  jsonl_file_count: number;
+}
+
+export interface SourceSettings {
+  override_dir: string | null;
+  wsl_scan_enabled: boolean;
+  is_windows: boolean;
+}
+
 // ── Worklog Types ────────────────────────────────────────────
 
 export interface WorklogTimeseriesPoint {

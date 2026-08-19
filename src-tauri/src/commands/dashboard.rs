@@ -178,41 +178,9 @@ pub async fn get_session_messages(
     state: State<'_, AppState>,
     source_session_id: String,
 ) -> Result<Vec<SessionMessage>, AppError> {
-    // Resolve the override directory if set
-    let override_dir = state
-        .database()
-        .get_app_setting("jsonl_directory_override")
-        .ok()
-        .flatten();
-
-    let claude_dir = if let Some(dir) = override_dir {
-        std::path::PathBuf::from(dir)
-    } else {
-        dirs::home_dir()
-            .ok_or_else(|| AppError::Internal("Cannot determine home directory".to_string()))?
-            .join(".claude")
-    };
-
-    let projects_dir = claude_dir.join("projects");
-    if !projects_dir.exists() {
-        return Ok(Vec::new());
-    }
-
-    // Search for <source_session_id>.jsonl in all project subdirectories
-    let target_filename = format!("{}.jsonl", source_session_id);
-    let mut jsonl_path: Option<std::path::PathBuf> = None;
-
-    if let Ok(entries) = std::fs::read_dir(&projects_dir) {
-        for entry in entries.flatten() {
-            let candidate = entry.path().join(&target_filename);
-            if candidate.exists() {
-                jsonl_path = Some(candidate);
-                break;
-            }
-        }
-    }
-
-    let path = match jsonl_path {
+    // Search every root's project directories for <source_session_id>.jsonl
+    let roots = crate::claude_roots::roots(state.database());
+    let path = match crate::jsonl::discovery::find_session_file(&roots, &source_session_id) {
         Some(p) => p,
         None => return Ok(Vec::new()),
     };

@@ -1,3 +1,4 @@
+mod claude_roots;
 mod commands;
 mod db;
 mod error;
@@ -132,6 +133,9 @@ pub fn run() {
             commands::jsonl::get_import_history,
             commands::jsonl::get_source_status,
             commands::jsonl::set_jsonl_directory_override,
+            commands::jsonl::list_claude_roots,
+            commands::jsonl::get_source_settings,
+            commands::jsonl::set_wsl_scan_enabled,
             commands::jsonl::rescan_sources,
             commands::user::get_user_profile,
             commands::plans::list_plans,

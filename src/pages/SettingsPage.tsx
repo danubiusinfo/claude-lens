@@ -11,6 +11,7 @@ import {
 } from '../lib/tauri';
 import { useToast } from '../components/ui/Toast';
 import { useSourceStatus } from '../hooks/useSourceStatus';
+import { SessionSourcesCard } from '../features/settings/SessionSourcesCard';
 import { useTheme } from '../hooks/useTheme';
 import type { ThemeMode } from '../lib/theme';
 import type { ModelPricing } from '../types';
@@ -241,6 +242,8 @@ export function SettingsPage() {
           </div>
         </div>
       </GlassCard>
+
+      <SessionSourcesCard onSourcesChanged={refreshStatus} />
 
       <GlassCard>
         <div className="flex items-center justify-between mb-2">

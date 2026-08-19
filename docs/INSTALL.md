@@ -56,6 +56,28 @@ falls back to the standard vibrancy material automatically.
 
 Uninstall via **Settings → Apps → Installed apps → ClaudeLens**.
 
+### Claude Code running inside WSL
+
+Claude Code stores its sessions in `.claude` in the home directory it runs
+under. Inside WSL that is the distribution's own filesystem, not your Windows
+profile — so `C:\Users\<you>\.claude` stays empty and there is nothing for
+ClaudeLens to read there.
+
+ClaudeLens handles this: on startup it lists the installed distributions and
+also reads `\\wsl.localhost\<distro>\home\<user>\.claude` (and `\root\.claude`).
+Both Windows-native and WSL sessions end up in the same dashboard. **Settings →
+Session sources** shows every directory found, how many JSONL files each holds,
+and lets you
+
+- turn the WSL scan off (reading the share wakes a stopped distribution), or
+- point the app at one folder by hand, e.g.
+  `\\wsl.localhost\Ubuntu\home\<user>\.claude`, when your layout is unusual —
+  a custom `CLAUDE_CONFIG_DIR`, for instance.
+
+If the list is empty, check inside WSL that `ls ~/.claude/projects` is not empty,
+then press **Rescan**. WSL directories are polled once a minute rather than
+watched, so live updates arrive with a short delay.
+
 ---
 
 ## Linux

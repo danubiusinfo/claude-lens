@@ -17,13 +17,8 @@ pub fn run_import(db: &Database, full: bool) -> Result<ImportResult, String> {
     // Load pricing from DB for cost calculations
     let pricing = db.get_model_pricing().unwrap_or_default();
 
-    // Get directory override from settings
-    let override_dir = db
-        .get_app_setting("jsonl_directory_override")
-        .ok()
-        .flatten();
-
-    let files = discover_jsonl_paths(override_dir.as_deref());
+    let roots = crate::claude_roots::roots(db);
+    let files = discover_jsonl_paths(&roots);
 
     // Create import record
     let now = chrono::Utc::now().to_rfc3339();
@@ -571,24 +566,7 @@ pub fn backfill_search_content(db: &Database) {
 
     tracing::info!("Backfilling search_content for {} sessions", sessions.len());
 
-    let override_dir = db
-        .get_app_setting("jsonl_directory_override")
-        .ok()
-        .flatten();
-
-    let claude_dir = if let Some(dir) = override_dir {
-        std::path::PathBuf::from(dir)
-    } else {
-        match dirs::home_dir() {
-            Some(home) => home.join(".claude"),
-            None => return,
-        }
-    };
-
-    let projects_dir = claude_dir.join("projects");
-    if !projects_dir.exists() {
-        return;
-    }
+    let roots = crate::claude_roots::roots(db);
 
     let mut backfilled = 0;
     for session in &sessions {
@@ -597,20 +575,7 @@ pub fn backfill_search_content(db: &Database) {
             None => continue,
         };
 
-        let target_filename = format!("{}.jsonl", source_id);
-        let mut jsonl_path: Option<std::path::PathBuf> = None;
-
-        if let Ok(entries) = std::fs::read_dir(&projects_dir) {
-            for entry in entries.flatten() {
-                let candidate = entry.path().join(&target_filename);
-                if candidate.exists() {
-                    jsonl_path = Some(candidate);
-                    break;
-                }
-            }
-        }
-
-        let path = match jsonl_path {
+        let path = match super::discovery::find_session_file(&roots, source_id) {
             Some(p) => p,
             None => continue,
         };

@@ -28,3 +28,6 @@ dirs = "5"
 tauri-plugin-liquid-glass = "0.1"
 notify = "7"
 notify-debouncer-mini = "0.5"
+
+[dev-dependencies]
+tempfile = "3"
